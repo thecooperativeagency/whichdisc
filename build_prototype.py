@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build WhichDisc prototype HTML: bag paths + gaps + Innova-style plate."""
+"""Build discwhich prototype HTML: bag paths + gaps + Innova-style plate."""
 
 from __future__ import annotations
 
@@ -112,35 +112,35 @@ def plate_svg(
     *,
     title: str,
     width: int = 920,
-    height: int = 520,
+    height: int = 560,
     ghost: list[Disc] | None = None,
 ) -> str:
-    """Innova-style plate: tee top, flight down, one column path per disc."""
+    """discwhich plate: tee BOTTOM, flight UP, one column path per disc."""
     ghost = ghost or []
     all_d = discs + ghost
     if not all_d:
         return f'<svg width="{width}" height="{height}"></svg>'
 
-    pad_l, pad_r, pad_t, pad_b = 36, 36, 48, 78
+    # top title / bottom tee labels
+    pad_l, pad_r, pad_t, pad_b = 40, 28, 44, 86
     n = len(all_d)
     col_w = (width - pad_l - pad_r) / max(n, 1)
     max_len = max(model.length(d) for d in all_d)
-    # fit y
     usable_h = height - pad_t - pad_b
     sy = usable_h / max_len
-    sx = 0.85  # lateral scale
+    sx = 0.92
 
-    # grid lines
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         f'<rect width="100%" height="100%" fill="#0f1419"/>',
         f'<text x="{pad_l}" y="28" fill="#f2f4f8" font-family="ui-sans-serif,system-ui,sans-serif" font-size="16" font-weight="700">{title}</text>',
-        f'<text x="{width-pad_r}" y="28" fill="#8b95a8" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" text-anchor="end">RHBH schematic · tee at top</text>',
+        f'<text x="{width-pad_r}" y="28" fill="#8b95a8" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" text-anchor="end">RHBH · tee at bottom · flight up</text>',
     ]
 
-    # horizontal guides
+    # horizontal guides — frac 0 at tee (bottom), 1 at end (top)
+    tee_y = height - pad_b
     for frac, label in [(0.0, "TEE"), (0.33, ""), (0.66, ""), (1.0, "END")]:
-        y = pad_t + frac * usable_h
+        y = tee_y - frac * usable_h
         parts.append(
             f'<line x1="{pad_l-8}" y1="{y:.1f}" x2="{width-pad_r+8}" y2="{y:.1f}" stroke="#243041" stroke-width="1"/>'
         )
@@ -149,47 +149,51 @@ def plate_svg(
                 f'<text x="{pad_l-10}" y="{y+4:.1f}" fill="#6b7689" font-size="9" font-family="ui-sans-serif,system-ui,sans-serif" text-anchor="end">{label}</text>'
             )
 
-    # US/OS legend strip
+    # center rail per column (tee line)
+    for i in range(n):
+        cx = pad_l + col_w * i + col_w / 2
+        parts.append(
+            f'<line x1="{cx:.1f}" y1="{tee_y:.1f}" x2="{cx:.1f}" y2="{pad_t:.1f}" stroke="#1a2330" stroke-width="1" stroke-dasharray="2 4"/>'
+        )
+
     parts.append(
-        f'<text x="{pad_l}" y="{height-18}" fill="#6b7689" font-size="10" font-family="ui-sans-serif,system-ui,sans-serif">← fade (OS left)　　turn / flip (US right) →</text>'
+        f'<text x="{pad_l}" y="{height-14}" fill="#6b7689" font-size="10" font-family="ui-sans-serif,system-ui,sans-serif">← fade (OS left)　　turn / flip (US right) →</text>'
     )
 
     def draw_one(d: Disc, idx: int, *, is_ghost: bool = False) -> None:
         ox = pad_l + col_w * idx + col_w / 2
-        oy = pad_t
-        pts = model.path(d, 56)
-        dattr = svg_path_d(pts, sx=sx, sy=sy, ox=ox, oy=oy)
+        oy = tee_y
+        pts = model.path(d, 72)
+        dattr = svg_path_d(pts, sx=sx, sy=sy, ox=ox, oy=oy, y_up=True)
         color = model.stability_color(d)
-        opacity = 0.35 if is_ghost else 1.0
+        opacity = 0.38 if is_ghost else 1.0
         dash = ' stroke-dasharray="5 4"' if is_ghost else ""
-        sw = 2.2 if is_ghost else 3.0
-        # end dot
+        sw = 2.3 if is_ghost else 3.15
         ex = ox + pts[-1][0] * sx
-        ey = oy + pts[-1][1] * sy
-        # start tee tick
+        ey = oy - pts[-1][1] * sy
+        # tee dot
         parts.append(
-            f'<circle cx="{ox:.1f}" cy="{oy:.1f}" r="3.2" fill="{color}" opacity="{opacity}"/>'
+            f'<circle cx="{ox:.1f}" cy="{oy:.1f}" r="3.4" fill="{color}" opacity="{opacity}"/>'
         )
         parts.append(
             f'<path d="{dattr}" fill="none" stroke="{color}" stroke-width="{sw}" stroke-linecap="round" stroke-linejoin="round" opacity="{opacity}"{dash}/>'
         )
         parts.append(
-            f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="4" fill="{color}" opacity="{opacity}"/>'
+            f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="4.2" fill="{color}" opacity="{opacity}"/>'
         )
-        # relative distance tick on the right of each path end (shows speed/glide stretch)
         rel = model.length(d) / max_len
         parts.append(
-            f'<text x="{ex+8:.1f}" y="{ey+3:.1f}" fill="#6b7689" opacity="{opacity}" font-size="8" font-family="ui-monospace,monospace">{rel:.0%}</text>'
+            f'<text x="{ex+7:.1f}" y="{ey-2:.1f}" fill="#6b7689" opacity="{opacity}" font-size="8" font-family="ui-monospace,monospace">{rel:.0%}</text>'
         )
-        # label
         label = d.name.upper()
         if is_ghost:
             label = f"+ {label}"
+        # labels under tee
         parts.append(
-            f'<text x="{ox:.1f}" y="{height-44}" fill="{color}" opacity="{min(1.0, opacity+0.25)}" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui,sans-serif" text-anchor="middle">{label}</text>'
+            f'<text x="{ox:.1f}" y="{height-52}" fill="{color}" opacity="{min(1.0, opacity+0.25)}" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui,sans-serif" text-anchor="middle">{label}</text>'
         )
         parts.append(
-            f'<text x="{ox:.1f}" y="{height-30}" fill="#8b95a8" opacity="{opacity}" font-size="9" font-family="ui-monospace,monospace" text-anchor="middle">{d.numbers}</text>'
+            f'<text x="{ox:.1f}" y="{height-38}" fill="#8b95a8" opacity="{opacity}" font-size="9" font-family="ui-monospace,monospace" text-anchor="middle">{d.numbers}</text>'
         )
 
     for i, d in enumerate(discs):
@@ -199,6 +203,7 @@ def plate_svg(
 
     parts.append("</svg>")
     return "\n".join(parts)
+
 
 
 def analyze_bag(bag: list[Disc], catalog: list[Disc], model: PathModel):
@@ -434,10 +439,10 @@ def main() -> None:
         height=560,
         ghost=ghost_picks,
     )
-    fairway_svg = plate_svg(fairway_proof, model, title="WhichDisc fairway plate (proof set)", width=980, height=520)
-    distance_svg = plate_svg(distance_proof, model, title="WhichDisc distance plate (proof set)", width=980, height=520)
-    mid_svg = plate_svg(mid_proof, model, title="WhichDisc mid plate (proof set)", width=920, height=500)
-    putt_svg = plate_svg(putt_proof, model, title="WhichDisc putt/approach plate (proof set)", width=900, height=480)
+    fairway_svg = plate_svg(fairway_proof, model, title="discwhich fairway plate (proof set)", width=980, height=520)
+    distance_svg = plate_svg(distance_proof, model, title="discwhich distance plate (proof set)", width=980, height=520)
+    mid_svg = plate_svg(mid_proof, model, title="discwhich mid plate (proof set)", width=920, height=500)
+    putt_svg = plate_svg(putt_proof, model, title="discwhich putt/approach plate (proof set)", width=900, height=480)
 
     # grid HTML
     rows_order = ["Putt/Approach", "Mid", "Fairway", "Control/Hybrid", "Distance"]
@@ -491,7 +496,7 @@ def main() -> None:
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>WhichDisc — Prototype</title>
+<title>discwhich — prototype</title>
 <style>
   :root {{
     --bg: #0b0f14;
@@ -568,13 +573,13 @@ def main() -> None:
 </head>
 <body>
 <header>
-  <h1>WhichDisc <span style="color:var(--muted);font-weight:600">prototype</span></h1>
+  <h1>discwhich <span style="color:var(--muted);font-weight:600">prototype</span></h1>
   <p>Schematic shot shapes from flight numbers (Innova-calibrated grammar). Your bag plotted, gaps dashed, proof plates beside classic Innova charts.</p>
   <div class="pillrow">
     <div class="pill"><strong>{len(bag)}</strong> discs in bag</div>
     <div class="pill"><strong>{len(gaps)}</strong> shot gaps</div>
     <div class="pill"><strong>{len(overlaps)}</strong> overlap cells</div>
-    <div class="pill">RHBH · tee at top</div>
+    <div class="pill">RHBH · tee at bottom</div>
   </div>
 </header>
 <nav>
@@ -622,7 +627,7 @@ def main() -> None:
 
   <section id="proof">
     <h2>Innova proof (frame of mind)</h2>
-    <div class="sub">Left/top: WhichDisc generated plate. Right/bottom: classic Innova characteristic chart. Tune target = family relationships, not pixel clone.</div>
+    <div class="sub">Left/top: discwhich generated plate. Right/bottom: classic Innova characteristic chart. Tune target = family relationships, not pixel clone.</div>
 
     <h3 style="margin:18px 0 8px;font-size:15px;color:var(--muted)">Fairway</h3>
     <div class="compare two">
@@ -650,7 +655,7 @@ def main() -> None:
   </section>
 </main>
 <footer>
-  WhichDisc prototype · local schematic paths from S/G/T/F · Innova refs used only for calibration / side-by-side proof · not affiliated with Innova.
+  discwhich prototype · local schematic paths from S/G/T/F · Innova refs used only for calibration / side-by-side proof · not affiliated with Innova · brand: discwhich.
 </footer>
 </body>
 </html>

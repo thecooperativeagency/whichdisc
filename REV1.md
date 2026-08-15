@@ -1,6 +1,6 @@
-# WhichDisc — Product Rev 1
+# discwhich — Product Rev 1
 
-**Working name:** WhichDisc  
+**Working name:** discwhich  
 **Nickname:** the Whicher  
 **One-liner:** Build, fill, or convert a disc golf bag by shot shape — not by vibes alone.
 
@@ -176,7 +176,7 @@ Inspired by classic **Innova flight characteristic charts** (paths from tee, US 
 
 ### 7.0 Brand chart sources (research log)
 
-| Brand | Classic path-wall chart? | Best known sources | Notes for WhichDisc |
+| Brand | Classic path-wall chart? | Best known sources | Notes for discwhich |
 |---|---|---|---|
 | **Innova** | Yes — the gold standard | [Disc Golf Shopping Innova charts](https://discgolfshopping.com/pages/innova-flight-chart); Innova disc comparison | Distance / fairway / mid / putt separate path plates |
 | **Discraft** | Partial / different system | [team.discraft.com/flight-chart](https://www.team.discraft.com/flight-chart); BuildMyBag.Discraft.com; stability -2…+3 legacy | Has flight chart + disc finder; not always Innova-style multi-path plate |
@@ -184,7 +184,7 @@ Inspired by classic **Innova flight characteristic charts** (paths from tee, US 
 | **MVP / Axiom / Streamline** | Weak as official wall art | Per-mold pages + numbers; community interactive charts; Marshall Street | No strong official multi-disc path poster; we generate paths from numbers |
 | **Cross-brand** | Interactive, not brand-official | [Marshall Street Flight Guide](https://www.marshallstreetdiscgolf.com/flightguide); [DG Puttheads flightcharts](https://flightcharts.dgputtheads.com/); TryDiscs matrix | Use as UX refs, not scrape targets for product visuals |
 
-**Implication:** Don’t wait on MVP/Discraft to publish Innova-quality posters. **WhichDisc owns a unified schematic path renderer** driven by S/G/T/F (+ optional brand underlays when assets are clean/licensed). Classic Innova/Discmania charts inform art direction only.
+**Implication:** Don’t wait on MVP/Discraft to publish Innova-quality posters. **discwhich owns a unified schematic path renderer** driven by S/G/T/F (+ optional brand underlays when assets are clean/licensed). Classic Innova/Discmania charts inform art direction only.
 
 ### 7.1 Views
 1. **Path chart** — each bagged disc as a flight curve; gaps shown as ghost paths  
@@ -291,7 +291,7 @@ Mobile-first. Desktop gets full chart + control rail.
 - Sentiment + pro edges  
 - Build-new wizard polish  
 - Bag depth (beat-in / backup plastics)  
-- Export image story card (“my WhichDisc bag”)  
+- Export image story card (“my discwhich bag”)  
 - Affiliate links  
 - Lefty + FH-optimized path art  
 
