@@ -1,35 +1,152 @@
 # discwhich — Working notes (saved)
 
-Last updated: 2026-08-15  
+Last updated: 2026-08-15 (evening pass)  
 Prototype: https://thecooperativeagency.github.io/whichdisc/  
 Repo: https://github.com/thecooperativeagency/whichdisc  
-Domain intent: buy **discwhich.com** (available). **discwhich.com** taken (dead site thru 2027).
+Local: `~/whichdisc/` (NOTES.md, REV1.md, path_model.py, build_prototype.py, out/, site/)
+
+### Domain
+- **Buy: discwhich.com** — was AVAILABLE (no WHOIS match, DNS NXDOMAIN). Lance planned morning purchase.
+- **whichdisc.com** — TAKEN since 2003, Cloudflare, expires 2027-06-09; dead "no longer trading" page. Not ours.
+- Also looked free-ish: discwhich.io, whichdisc.io, .golf variants (confirm at registrar).
+- Live prototype stays on github.io until domain points.
 
 ---
 
 ## Name
 - Product: **discwhich**
-- Nickname: the Whicher (secondary)
-- Public URL candidate: discwhich.com (Lance buying morning-of)
+- Nickname: **the Whicher** (secondary / badge only)
+- Do not lead with abstract "arm band" language — say **arm speed**
 
 ---
 
 ## Core thesis
-- Core object = **bag as shot-shape grid**, not a mold catalog
+- Core object = **the bag as coverage of shot shapes / landing zones**, not a mold catalog
 - Numbers = skeleton
-- Plastic mannerisms + sentiment + pro comps = muscle
-- We **draw our own** schematic flight paths from S/G/T/F
-- Innova official charts = **calibration / proof only**, not assets we ship as ours
-- After Innova-proofed: chart molds brands never plated
+- Plastic + arm speed + release + (later) sentiment/pro = muscle
+- We **draw our own** schematic paths + field map from S/G/T/F (+ throw conditions)
+- Innova official charts = calibration reference only
+- Puttheads etc. = UX/category proof, **not** a high bar and not commonly known
 
 ---
 
 ## Chart orientation (LOCKED)
-- **Tee at BOTTOM** of graphic
-- Flight runs **UP** the page (away from viewer)
+- **Tee at BOTTOM** of every graphic (paths + field map)
+- Flight / fairway runs **UP** the page (away from viewer)
 - RHBH: +x = right (turn/flip), −x = left (fade)
-- Shape ≠ distance: **turn/fade = curve**, **speed/glide = how far up the chart**
+- Shape ≠ distance: turn/fade = curve; speed/glide = how far upfield
+- Lateral motion should stay **subtle** (Innova / Puttheads scale) — over-dramatic curves look fake
+- Fade once started **keeps hooking left through the tip** — never "fade then straighten"
 - Same-ish shape can still be different discs (Orc vs Mystere)
+
+### Path law — two lateral questions
+1. **Does it flip / go right before the finish?** → turn  
+2. **How far left does it fade at the very end?** → fade  
+
+### Throw conditions — spin × speed
+| More… | Effect |
+|---|---|
+| **Speed** (arm speed) | Farther; more flip if mold can; fade **later** if disc is flying |
+| **Spin** | More flip-up, more glide; fade **later** |
+| **Both** | Chart flight |
+| **Low both** | Early dump, little flip, short ("too much disc") |
+
+Copy: "Faster & more spin = more flip, more glide, fade waits until the end."
+
+---
+
+## Bag field map (drone / top-down) — PREFERRED bag viz
+
+**Lance concept:** drone view behind thrower.
+
+### Layout (LOCKED)
+- Thrower **silhouette at BOTTOM**
+- Field extends **UP** = farther
+- L/R = fade / turn sides (RHBH default)
+- Each disc = **landing zone blob** (distance + left/right), not only a thin line
+- **Empty grass** = missing shots (spatial gap story)
+- Ghost blobs = recommended fills
+
+### Why primary
+- "Banshee lands here, Archon deep, Aviar short" in one glance
+- Gaps obvious without reading a matrix
+- Shareable bag card
+
+### Views
+| View | Job |
+|---|---|
+| **Field map** | bag coverage on the ground — primary bag story |
+| Path plate | flight shape (flip → fade) |
+| Shot grid | taxonomy / completeness checklist |
+
+v1: simple silhouette OK; schematic zones not GPS; arm speed scales depth; label missing **shots** first.
+
+---
+
+## Competitive landscape (honest)
+
+### DiscIt
+- **What:** REST API of mold list scraped from Marshall Street Flight Guide (nightly)
+- **Gives:** name, brand, S/G/T/F, stability slug, optional pic/link
+- **Does not:** paths, physics, arm speed, hyzer, bag logic
+- **Use for us:** catalog spine only (mirror locally; don't depend on live scrape forever)
+
+### Marshall Street Flight Guide
+- Best-known **catalog UI** (speed vertical, stability horizontal)
+- Static flight chart images per disc; not a throw simulator
+- Not a bag-gap/convert product
+
+### DG Puttheads Flight Charts — deep dive (2026-08-15)
+**Site:** https://flightcharts.dgputtheads.com/  
+**Who:** Chris & Rodney, dgputtheads.com blog  
+**Market reality:** **Not great UX, not commonly known, looks very 1990s.** Low brand threat. Category prototype, not category owner.
+
+**What it is:** interactive multi-brand grid + path chart + light throw dials + compare + my-bag matrix.
+
+**How paths really work (inspected code/API):**
+- Browser does **not** compute paths live from S/G/T/F
+- API: `https://flightcharts.dgputtheads.com/discdata/{id}`
+- Each disc stores **six prebaked polylines** (~17–18 points):
+  - `bh1/bh2/bh3` = backhand arm speed slow/normal/fast
+  - `fh1/fh2/fh3` = forehand (separate sets, not just mirrored BH)
+- UI swaps which array to plot (AmCharts)
+- Also stores manufacturer numbers + PDGA-ish dims (diameter, rim, max weight, approval date) + buy/review links
+
+**Their stated method (about page):**
+- "Complex math formula" from inputs
+- **Plus human adjustment** from throwing experience
+- Fast to add molds
+- Extra data mostly **PDGA public**
+- They admit charts can be wrong
+
+**Geometry lesson:** their paths are nearly vertical; lateral x is tiny vs distance y. Matches Innova subtlety. Our early lines were overcooked laterally.
+
+**Dials they have:** L/R hand, FH toggle, 3 arm speeds.  
+**Dials they lack:** hyzer degrees, spin, nose, wind, plastic-in-path.
+
+**Steal:** grid → select → path → arm-speed/hand → compare → bag  
+**Don't steal:** dated UI, opaque editorial black box as long-term data dependency, scrape of their path arrays  
+**Beat them on:** modern UI, field map, bag gaps/convert, plastic, better arm-speed onboarding, release angle, trust copy
+
+### Shotshaper (kegiljarhus) — honest
+- Clean academic repo (UiS fluid dynamics prof), GPL-3, not shady
+- **Physics throw sim** for a **few** CFD-modeled discs
+- Inputs: speed, spin, nose/roll — **not** S/G/T/F
+- Use: calibrate our physics intuition / optional research  
+- **Not** the product path engine for all molds
+
+### FrisPy / flying-discs
+- Python frisbee ODEs; same class as Shotshaper (physics, not flight-number catalog)
+
+### TechDisc
+- Paid launch monitor + sim; measures real throws; different job
+
+### TryDiscs
+- Speed×stability matrix; no path sim
+
+### Hard truth
+There is **no** finished open product that is: all molds + flight numbers in + continuous arm speed/hyzer/spin + trusted physics + modern bag tool.  
+That gap **is** discwhich.
 
 ---
 
@@ -51,266 +168,94 @@ Domain intent: buy **discwhich.com** (available). **discwhich.com** taken (dead 
 ---
 
 ## Brand / fill policy
-- **Stay in family**
-- **Convert to** target brand(s)
-- **Mixed bag default:** if bag already has 2–3 brands, **fill from brands already present** first
-- Toggles: bag-brands-only | prefer-bag-brands | single-lock | any
-- Son’s bag example → fill from Innova + MVP/Axiom first
+- Stay in family / convert to / mixed
+- **Mixed default:** fill from brands already in bag first
+- Son bag → Innova + MVP/Axiom first
 
 ---
 
-## Plastic mannerisms (required layer)
-Same mold ≠ same flight. Store `mold + plastic` when known.
+## Plastic mannerisms (required)
+Same mold ≠ same flight. Store mold + plastic.
 
-### Innova-style ladder (general)
-- DX / baseline → less stable, beats in fast  
-- Pro / GStar → often flippier than premium  
-- Star → premium, holds longer  
-- Champion / C-line class → usually most stable OOTB  
+Innova-ish: DX less stable → Star holds → Champion often most OS OOTB  
+MVP-ish: Soft/Electron flippier → Neutron/Proton premium → stiff OS holds  
 
-### MVP-family analog
-- Soft / Electron / some Fission → often less stable  
-- Neutron / Proton / Plasma → closer to chart premium  
-- Stiffer OS blends → hold OS longer  
-
-**Engine:** effective_stability = numbers ± plastic_offset ± beat-in (later)
-
-Examples in son’s bag:
-- DX Invader = flippier end of mold  
-- Champion Sidewinder ≠ DX Sidewinder  
-- Star Destroyer = premium OS distance  
-- Neutron Soft Hex = can play a hair less stable than stiff Neutron  
-- Glitch Glow = own class (catch / touch, not standard putter)
+effective_stability = numbers ± plastic_offset ± beat-in (later)
 
 ---
 
 ## Shot grid
 Rows: Putt/Approach · Mid · Fairway · Control/Hybrid · Distance  
 Cols: US · STR · OS · VOS  
-
-Stability bucketing note:
-- stab sum alone lies (TeeBird 0/2 and Orc −1/3 both sum ~2)
-- fade-heavy molds tip OS/VOS even when sum looks straight
+Fade-heavy molds tip OS even when turn+fade sum looks "straight."
 
 ---
 
 ## Matching
-- Stability (turn+fade) heaviest  
-- Speed band hard filter  
-- Fade / turn / glide  
-- Plastic offset  
-- Optional sentiment + pro edges later  
-- Always show why  
-- Collapse near-duplicates by **shot**, not logo  
-- Cap recommendations at max controllable speed  
-
-Shape vs carry:
-- Orc 10/4/−1/3 → shorter, harder fade  
-- Mystere 11/6/−2/2 → longer, more flip  
-- Related neighborhood ≠ same line  
+- Stab / speed band / fade / turn / glide / plastic
+- Show why; collapse by shot not logo
+- Cap at controllable speed for arm speed
+- Shape vs carry both matter (Orc ≠ Mystere)
 
 ---
 
-## Data
-- Spine: DiscIt / Marshall-derived mold list (mirror locally)
-- Fields: mold, brand, family, category, S/G/T/F, plastic, stability slug
-- Later: comparables[] from sentiment/pro/editorial
+## Arm speed (not "band")
+- UX lead with **max reliable distance + which disc + how it flies**
+- Internal scale can be 1–12 or speed-ceiling; don't marry 1–12 publicly
+- Lance calibration hint: max D from Archon / beat-in Orc / Mystere → ~controllable **speed 11** class
+- Kid/son: if arm low, Sidewinder = distance; Destroyer often utility/future
 
 ---
 
-## Lance bag (adult) — test set
-Aviar P&A, AviarX3, Atlas, Mako3, TeeBird3, Banshee, Firebird, Orc, Mystere, Archon  
-
-Observed:
-- Overlaps: Mako3+Atlas (mid STR); Mystere+Archon (flip hybrid)
-- Gaps: US mid, OS mid, US fairway, flip distance, OS distance
-- Suggested Innova fills (number pass): Panther, Roc3, Leopard3, Tern, Destroyer
+## Data spine
+- Mirror DiscIt/MS mold list locally
+- PDGA for dims when useful
+- Own path/field generator
+- Later: comparables from sentiment/pro
 
 ---
 
-## Son bag — discuss before build
-1. Innova Star Destroyer  
-2. Axiom Neutron Soft Hex  
-3. MVP Glitch Glow  
-4. Innova Champion Sidewinder  
-5. Innova DX Invader  
+## Test bags
+**Lance:** Aviar P&A, AviarX3, Atlas, Mako3, TeeBird3, Banshee, Firebird, Orc, Mystere, Archon  
+- Overlaps: Mako3+Atlas; Mystere+Archon  
+- Gaps: US mid, OS mid, US fairway, flip distance, OS distance  
 
-Read: fun mixed starter pile, not a ladder.  
-Tension: Sidewinder → Destroyer is a huge jump; Glitch ≠ putting putter.  
-Missing: real putter, OS/stable mid, straight fairway, OS fairway, controllable 9–11.  
-Fill policy when run: **Innova + MVP/Axiom only** unless opened.  
-Plastic-aware. Discuss fill list before regenerating page.
-
-Open questions (son):
-- Age / arm speed  
-- Does Destroyer actually fly for him?  
-- What does he putt with?  
-- Bag size target 6–8 vs 9–12  
+**Son (discuss before build):** Star Destroyer, Neutron Soft Hex, Glitch Glow, Champion Sidewinder, DX Invader  
+- Mixed starter; Glitch ≠ putter; Sidewinder→Destroyer jump  
 
 ---
 
-## Visual system
-- Own path renderer from S/G/T/F  
-- Innova plates = side-by-side proof only  
-- Brand chart availability:
-  - Innova: classic multi-path plates (gold standard)
-  - Discmania: official flight chart/PDF
-  - Discraft: flight chart + different stability language
-  - MVP family: weak official wall art → we generate
-- Views: path chart, grid heatmap, ladder, compare overlay
-- Ghost dashed = recommended gap fills
-- Length % marks optional so carry differences read
+## Brand / logo directions
+1. Flight-path wordmark (tee-bottom grammar)  
+2. W monogram → path (app icon)  
+3. Gap-grid missing cell  
+4. Disc + chevron  
+5. "the Whicher" badge only  
+Lean: #2 icon + #1 wordmark. Modern utility — not Puttheads-era UI.
+
+---
+
+## Feature backlog
+**A:** plastic, mixed fill, speed cap, overlap, convert/match/gaps, **field map**  
+**B:** pro bags on same map, arm-speed distances, release-angle dial  
+**C:** beat-in, FH grid, wind, sentiment, share cards, affiliate  
+
+Build order: path+field+grid → arm speed → release → pro bags  
 
 ---
 
 ## Prototype status
-- Local engine: `~/whichdisc/`
-- Live Pages: github.io/whichdisc
-- Needs: tee-at-bottom fix (code pass may still be pending), plastic field, mixed-brand fill, son bag run after discuss
-
----
-
-## Brand marks / logo directions (topic for tomorrow)
-Tone: utility tool golfers trust — clean, sport, a little sharp. Not cartoon mascot unless we choose playful lane on purpose.
-
-### Strong directions
-1. **Flight-path wordmark** — “Which” in solid type, “Disc” with a single RHBH schematic curve through/under the letters (tee-bottom grammar). Instantly on-product.
-2. **W / path monogram** — letter W whose right leg becomes a turn→fade flight line. App icon gold.
-3. **Bag grid mark** — tiny 3×3 shot grid with one cell lit (the “missing” shot). Owns gap-fill story.
-4. **Disc + chevron** — top-down disc silhouette, small nose chevron / path leaving the rim. More generic DG; only if path mark feels too nerdy.
-5. **The Whicher badge** — secondary stamp only (“asked the Whicher”); not the primary corporate mark.
-
-### System to build (when we do it)
-- Primary wordmark
-- App / favicon monogram
-- One-color + dark-mode + stamped-on-photo versions
-- Optional path-curve as UI motif (charts, loading, share cards)
-
-### Avoid
-- Clip-art basket chains as the whole logo
-- Innova-clone flight-plate wallpaper as brand
-- Over-literal “?” + disc mashup unless very tight
-
-### Tomorrow decision
-Pick 1–2 directions → generate mark board → lock primary before public discwhich.com.
-
----
-
-## Feature development backlog (ideas parked)
-
-### Tier A — near-core (after bag grid + paths work)
-- Plastic mannerisms / effective stability
-- Mixed-bag fill from brands already in bag
-- Max controllable speed hard cap
-- Overlap collapse by shot shape
-- Convert / single-match / gap fill modes
-
-### Tier B — pro + power model (big differentiator)
-**Pro bags**
-- Featured tour/am bags: what’s in the bag by slot + shot shape plate
-- Compare *your* bag ↔ pro bag (same grid language)
-- Source: in-the-bag posts, team pages, coverage — cited, dated (bags change)
-- Not just mold lists — **their shot map** (US mid, OS fairway, etc.)
-
-### Arm speed scale (discwhich) — worked example
-
-**Idea:** user-facing **arm speed 1–12** (not raw mph first).  
-Mph optional advanced; the 1–12 arm speed drives recommendations.
-
-| Band | Who it feels like | Controllable speed (approx) | What the bag should emphasize |
-|---|---|---|---|
-| **1–2** | New / kid arm | ≤ 6–7 | Putters, mids, understable fairways; almost no 10+ |
-| **3–4** | Rec / developing | ≤ 8–9 | Straight fairways enter; light US distance only |
-| **5–6** | Solid am | ≤ 10–11 | Full fairway suite; controllable drivers |
-| **7–8** | Hot am / low pro | ≤ 12 | Distance OS/US both useful |
-| **9–10** | Tour power (Ricky-class) | ≤ 13 | High-speed molds actually flip/hold as numbered |
-| **11–12** | Elite distance (Wiggins-class) | 14+ viable | Max D molds “work”; still need utility OS |
-
-**Worked example**
-- Kid **arm 1** → Sidewinder = main driver; Destroyer = often just a heavy OS dump / future disc  
-- Lance *(placeholder until measured)* likely **5–7** if he bags Mystere/Orc/Firebird with intent — full fairway + hybrid ladder, selective distance  
-- **Ricky ~9** → Destroyer/Wraith class are real workhorses, not toys  
-- **Wiggins ~11** → 14-speed understable actually goes where numbers promise  
-
-**How picks change (same mold, different arm)**
-- Arm 1 + Star Destroyer → label as *utility beef / do not max-D*; prefer Sidewinder, Hex, putter  
-- Arm 6 + Star Destroyer → *OS distance / wind / hyzer button*  
-- Arm 9 + Star Destroyer → *primary OS distance slot*  
-- Arm 11 + understable 14-speed → *max D flipper*; arm 3 → *don’t bag it*
-
-**Rules for Discwhich**
-1. Every profile has an **arm speed (1–12)** (default ask; don’t assume tour).  
-2. Recommendations **hard-cap mold speed** near band (with small stretch if stability bias = OS utility).  
-3. Distance shown as **range for that band**, not one fantasy number.  
-4. Pro bags tagged with **pro arm speed** so compare is fair (“Ricky’s bag at your arm 4 ≠ his flight”).  
-5. Release angle is a second dial on top of arm speed.
-
-**Arm-speed calibration wizard (no launch monitor required)**  
-Ask 3–5 plain questions → map to 1–12:
-
-1. **Max reliable drive distance** (not one lucky roller) — bands in feet/meters  
-2. **Which disc** they use for that max (mold + plastic if known)  
-3. **How it flies at that power** — holds straight / flips some / turns and burns / never turns (always fades early)  
-4. Optional: comfortable **fairway** distance with a TeeBird/Hex-class  
-5. Optional: age / years playing (soft prior only)
-
-**Mapping logic (sketch)**
-- Distance alone → rough arm speed  
-- Disc used for max → refine (max on Sidewinder ≠ max on Destroyer)  
-- Shape at max → refine further:
-  - Destroyer that never turns + short distance → lower arm speed, disc too fast  
-  - Sidewinder that goes far and flips to flat → mid arm speed  
-  - High-speed US that still finishes predictably at long distance → high arm speed  
-- Output: **arm speed + confidence** + one sentence (“Arm ~3: Sidewinder is your distance disc; 12-speeds are utility/future”)
-
-**Informing son’s bag specifically**
-- If arm ≈ 1–2: keep Hex + Sidewinder + real putter; bench or reframe Destroyer; skip stacking more high-speed OS.  
-- Fill: putter, stable mid, straight fairway — not another 12-speed.
-- Calibrate his arm speed via max distance + “is max on Sidewinder or Destroyer?” before final fills.
-
-
-**Release angle dial**
-- Flat / hyzer / anhyzer (and degrees later)
-- Re-draw schematic path for same disc under different release
-- Teach shot shaping: “Hex on hyzer vs flat vs anhyzer”
-- Pair with arm speed: high-speed OS on hyzer vs understable on anhyzer
-
-### Tier C — later depth
-- Beat-in / seasons of plastic
-- FH vs BH separate grids
-- Lefty mirror
-- Wind presets
-- Sentiment + pro commentary edges on matches
-- Share cards: “my bag plate” / “my arm speed map”
-- Affiliate buy links once trust is real
-
-### Product principle for all of the above
-Still one engine: **shot shape + conditions → recommendation**.  
-Arm speed and release angle are **modifiers on the same path model**, not a separate app.
-Pros are **reference bags on the same grid**, not celebrity merch pages.
-
-### Build order suggestion
-1. Solid path model + bag grid + plastic + mixed fill  
-2. Arm speed (1–12) → distance ranges + speed cap enforcement  
-3. Release-angle dial on path renderer  
-4. Pro bag library on same grid + compare  
-
----
-
-## Tomorrow agenda (~9am reminder)
-1. Buy **discwhich.com** (if not done)
-2. Finish **tee-at-bottom** charts + push Pages
-3. **Logo / brand mark** directions → pick + optional generate board
-4. Son bag: chart + fill discuss (Innova + MVP/Axiom, plastic-aware)
-5. Plastic offsets v0 + bag-brands-only fill mode notes → build if time
-6. Skim **feature backlog** (pro bags, arm speed distance, release angle) — park or promote, don’t build all tomorrow
+- Live Pages + repo exist (branding discwhich on page)
+- Path model iterated; tee-bottom + finish law in code; still needs visual QA vs Innova
+- Field map **not built yet** (notes only)
+- Puttheads reverse-engineering done (prebaked bh/fh paths)
 
 ---
 
 ## Next when Lance says go
-1. Tee-bottom charts + git/pages  
-2. Logo exploration board  
-3. Son bag chart + gap discuss  
-4. Plastic offsets v0  
-5. Bag-brands-only fill mode  
-6. discwhich.com → point Pages/CNAME  
+1. discwhich.com DNS when purchased  
+2. Field map v0 (tee bottom, landing blobs, empty zones)  
+3. Path visual QA (subtle lateral, no straighten-after-fade)  
+4. Logo board  
+5. Son bag discuss/fill  
+6. Plastic + bag-brands fill  
