@@ -1,19 +1,18 @@
-"""discwhich schematic flight-path model.
+"""discwhich flight paths — grounded in disc flight dynamics + Innova plate grammar.
 
-Chart convention (LOCKED):
-  - Tee at BOTTOM, flight runs UP (away from viewer)
-  - Model +y = farther from tee
-  - +x = right (RHBH turn/flip) · −x = left (RHBH fade)
+Convention (LOCKED):
+  Tee at BOTTOM, flight UP. +x = RHBH right (turn). −x = RHBH left (fade).
 
-THE TWO QUESTIONS (product law):
-  1) Does it flip / push RIGHT before the finish?  (turn)
-  2) How far LEFT does it fade at the very end?   (fade)
+Physics grammar (RHBH):
+  1. High-speed phase: understable turn can push RIGHT (flip).
+  2. Low-speed phase: fade ALWAYS pulls LEFT.
+  3. Once fade owns the line, it does NOT straighten out — tip keeps hooking left.
+  4. OS molds: little/no right; continuous left bow into a left finish.
+  5. Straight molds: nearly vertical, small left finish only.
+  6. US molds: right mid, then left crook; tip still leftward.
 
-Innova plate truth:
-  - Almost every mold finishes with a left tip hook.
-  - US: right mid (flip), then left crook — end may still sit right of tee.
-  - Straight: little/no right, gentle left finish.
-  - OS: little/no right, hard left finish (whole line often lives left).
+Innova plates: paths are mostly VERTICAL. Lateral motion is modest
+(roughly ~8–20% of path length), smooth, no wild swings.
 """
 
 from __future__ import annotations
@@ -50,131 +49,155 @@ class Disc:
         return f"{fmt(self.speed)}/{fmt(self.glide)}/{fmt(self.turn)}/{fmt(self.fade)}"
 
 
-def _clamp01(x: float) -> float:
-    return min(1.0, max(0.0, x))
-
-
-def _smoothstep(edge0: float, edge1: float, x: float) -> float:
-    if edge1 == edge0:
-        return 0.0
-    t = _clamp01((x - edge0) / (edge1 - edge0))
-    return t * t * (3.0 - 2.0 * t)
-
-
-def _logistic(t: float, mid: float, k: float) -> float:
-    return 1.0 / (1.0 + math.exp(-k * (t - mid)))
+def _clamp(x: float, a: float = 0.0, b: float = 1.0) -> float:
+    return min(b, max(a, x))
 
 
 class PathModel:
-    """Path = (1) right flip amount + (2) left finish amount + carry.
+    """Integrate lateral rate: turn early, fade late, fade never reverses or flattens to straight.
 
-    Q1 flip right  ← turn (and a little speed)
-    Q2 fade left   ← fade (plus small natural tip curl)
+    x'(t) = turn_rate(t) + fade_rate(t)
+      turn_rate ≥ 0 pushes right when mold turn is negative (US)
+      fade_rate ≤ 0 always pulls left, and |fade_rate| grows through the finish
     """
 
     def __init__(
         self,
         *,
-        length_base: float = 50.0,
-        length_speed: float = 6.2,
-        length_glide: float = 7.6,
-        turn_gain: float = 14.5,
-        fade_gain: float = 18.5,
-        natural_finish: float = 7.0,
-        os_bow_gain: float = 5.5,
-        max_abs_x: float = 52.0,
+        length_base: float = 100.0,
+        length_per_speed: float = 8.0,
+        length_per_glide: float = 6.0,
+        # modest lateral — Innova lines stay mostly vertical
+        turn_gain: float = 0.38,
+        fade_gain: float = 0.48,
+        natural_fade: float = 0.06,
+        os_bias_gain: float = 0.16,
+        integrate_scale: float = 72.0,
     ) -> None:
         self.length_base = length_base
-        self.length_speed = length_speed
-        self.length_glide = length_glide
+        self.length_per_speed = length_per_speed
+        self.length_per_glide = length_per_glide
         self.turn_gain = turn_gain
         self.fade_gain = fade_gain
-        self.natural_finish = natural_finish
-        self.os_bow_gain = os_bow_gain
-        self.max_abs_x = max_abs_x
+        self.natural_fade = natural_fade
+        self.os_bias_gain = os_bias_gain
+        self.integrate_scale = integrate_scale
 
     def length(self, d: Disc) -> float:
-        sp = d.speed
-        sp_eff = sp if sp <= 12 else 12 + 0.45 * (sp - 12)
-        us_bonus = 0.0
+        sp = d.speed if d.speed <= 12 else 12 + 0.4 * (d.speed - 12)
+        bonus = 0.0
         if d.turn <= -2 and d.glide >= 5:
-            us_bonus = 3.5 + 1.2 * min(3.0, -d.turn - 1)
-        return (
-            self.length_base
-            + self.length_speed * sp_eff
-            + self.length_glide * d.glide
-            + us_bonus
-        )
+            bonus = 4.0 + (-d.turn - 2) * 1.5
+        return self.length_base + self.length_per_speed * sp + self.length_per_glide * d.glide + bonus
 
-    def _turn_build(self, t: float, d: Disc) -> float:
-        """Q1: flip/right push builds early-mid, freezes before tip."""
-        peak = 0.38 + 0.014 * max(0.0, min(6.0, d.speed - 5.0))
-        build = _logistic(t, mid=peak * 0.48, k=12.5)
-        freeze = 1.0 - 0.22 * _smoothstep(peak, min(0.96, peak + 0.42), t)
-        return build * freeze
+    def _turn_rate_weight(self, t: float, d: Disc) -> float:
+        """High-speed turn: rises after release, peaks mid-early, dies before finish.
 
-    def _fade_build(self, t: float, d: Disc) -> float:
-        """Q2: quiet early, decisive left crook at the end."""
+        Must be ~0 at t→1 so we never get rightward motion in the fade phase.
+        """
+        # bell peaking ~0.35–0.45 depending on speed
+        peak = 0.34 + 0.012 * max(0.0, min(5.0, d.speed - 6.0))
+        # gaussian-like
+        width = 0.22
+        w = math.exp(-0.5 * ((t - peak) / width) ** 2)
+        # hard kill in last 25% — fade owns the end
+        kill = 1.0 - _clamp((t - 0.72) / 0.20)
+        return max(0.0, w * kill)
+
+    def _fade_rate_weight(self, t: float, d: Disc) -> float:
+        """Low-speed fade: near 0 early, ramps up, STAYS ON through the tip.
+
+        Critical: weight is still increasing or high at t=1 — never drops back
+        (that was the bug: left hook then straight vertical tip).
+        """
+        # smooth ramp starting mid-late
+        # use t^n so derivative stays positive at end
         fade_n = max(0.0, d.fade)
-        mid = 0.70 - 0.02 * min(4.0, fade_n)
-        k = 16.0 + 1.3 * min(4.0, fade_n)
-        body = _logistic(t, mid=mid, k=k)
-        crook = t ** (4.0 - 0.12 * min(3.0, fade_n))
-        return 0.58 * body + 0.62 * crook
+        # higher fade starts a hair earlier
+        start = 0.45 - 0.03 * min(3.0, fade_n)
+        u = _clamp((t - start) / max(0.05, 1.0 - start))
+        # ease-in then keep climbing (no plateau-to-zero)
+        # u^2 early, mix with u so end still has slope
+        return 0.35 * u * u + 0.65 * (u ** 1.35)
 
-    def _os_bow(self, t: float, d: Disc) -> float:
-        """OS skips the right flip — line lives left (Firebird family)."""
-        os = max(0.0, d.fade - max(0.0, -d.turn) * 0.75)
-        if os < 0.2:
-            return 0.0
-        bow = _smoothstep(0.02, 0.40, t) * (0.6 + 0.4 * t)
-        return -self.os_bow_gain * os * bow
-
-    def point(self, d: Disc, t: float) -> Point:
-        t = _clamp01(t)
-        turn_n = float(d.turn)
+    def lateral_rate(self, d: Disc, t: float) -> float:
+        """dx/dt in model units. Right positive, left negative."""
+        t = _clamp(t)
+        turn_n = float(d.turn)  # negative = US
         fade_n = max(0.0, float(d.fade))
 
-        # Q1 — flip right
-        flip_x = (-turn_n) * self.turn_gain * self._turn_build(t, d)
-        if turn_n <= -3.0:
-            mid_bulge = math.sin(math.pi * _clamp01(t / 0.90)) ** 1.05
-            flip_x *= 0.86 + 0.32 * mid_bulge
+        # Turn contributes RIGHT when turn_n is negative: rate = (-turn_n) * weight >= 0
+        turn_rate = (-turn_n) * self.turn_gain * self._turn_rate_weight(t, d)
 
-        if d.speed >= 11 and -1.3 <= turn_n <= 0.0 and fade_n >= 2.5:
-            early = 1.0 - _smoothstep(0.0, 0.30, t)
-            flip_x *= 1.0 - 0.50 * early
+        # Fade always LEFT — stays on through tip (never straighten-out)
+        fade_strength = fade_n * self.fade_gain + self.natural_fade
+        if turn_n <= -1:
+            # US still shows a left tip crook after flip
+            fade_strength += 0.10 * min(3.0, -turn_n)
+        if fade_n >= 3 and turn_n >= -0.5:
+            fade_strength *= 1.12
+        fade_rate = -fade_strength * self._fade_rate_weight(t, d)
 
-        # Q2 — finish left
-        finish_w = self._fade_build(t, d)
-        fade_x = -fade_n * self.fade_gain * finish_w
-        natural_x = -self.natural_finish * (1.0 - 0.12 * min(4.0, fade_n)) * finish_w
-        bow_x = self._os_bow(t, d)
+        # OS bias: continuous gentle left during flight (Firebird family never flips right)
+        os = max(0.0, fade_n - max(0.0, -turn_n) * 0.8)
+        os_rate = 0.0
+        if os > 0.25:
+            # gentle left through middle of flight
+            mid = math.sin(math.pi * t)  # 0 at ends, 1 mid — but we want some at end too
+            # prefer steady left pressure after t>0.15
+            press = _clamp((t - 0.12) / 0.5)
+            os_rate = -self.os_bias_gain * os * (0.5 * press + 0.5 * press * press)
 
-        x = flip_x + fade_x + natural_x + bow_x
-        if abs(x) > self.max_abs_x:
-            x = math.copysign(self.max_abs_x + (abs(x) - self.max_abs_x) * 0.18, x)
+        # Destroyer-class: suppress early turn so line stays tight then dumps left
+        if d.speed >= 11 and -1.25 <= turn_n <= 0 and fade_n >= 2.5:
+            turn_rate *= 0.45
 
-        return (x, t * self.length(d))
+        return turn_rate + fade_rate + os_rate
 
-    def path(self, d: Disc, n: int = 72) -> List[Point]:
+    def path(self, d: Disc, n: int = 80) -> List[Point]:
         if n < 2:
             n = 2
-        return [self.point(d, i / (n - 1)) for i in range(n)]
+        L = self.length(d)
+        xs = [0.0]
+        # integrate rate with simple RK-ish steps along t
+        for i in range(1, n):
+            t0 = (i - 1) / (n - 1)
+            t1 = i / (n - 1)
+            dt = t1 - t0
+            # midpoint rule
+            r_mid = self.lateral_rate(d, 0.5 * (t0 + t1))
+            xs.append(xs[-1] + r_mid * dt * self.integrate_scale)
+
+        # light end clamp only if absurd
+        pts: List[Point] = []
+        for i, x in enumerate(xs):
+            t = i / (n - 1)
+            if abs(x) > 36:
+                x = math.copysign(36 + (abs(x) - 36) * 0.15, x)
+            pts.append((x, t * L))
+        return pts
 
     def shape_metrics(self, d: Disc) -> dict:
-        """The two questions, quantified."""
-        pts = self.path(d, 80)
+        pts = self.path(d, 100)
         xs = [p[0] for p in pts]
-        max_right = max(xs)
-        flip = max(0.0, max_right)
+        max_r = max(xs)
+        min_x = min(xs)
+        # tip: last 15% must be leftward (dx < 0)
         i0 = int(0.85 * (len(xs) - 1))
         tip_dx = xs[-1] - xs[i0]
+        # check no "straighten after fade": last segment rates should stay <= 0
+        last_rates = []
+        for i in range(max(1, len(xs) - 10), len(xs)):
+            last_rates.append(xs[i] - xs[i - 1])
         return {
-            "flip_right": round(flip, 2),
+            "flip_right": round(max(0.0, max_r), 2),
             "finish_x": round(xs[-1], 2),
+            "min_x": round(min_x, 2),
             "tip_dx": round(tip_dx, 2),
-            "flips": flip > 1.5,
+            "last_rates_max": round(max(last_rates), 4),
+            "flips": max_r > 1.2,
+            "lat_span": round(max(xs) - min(xs), 2),
+            "lat_over_len": round((max(xs) - min(xs)) / max(1e-6, pts[-1][1]), 3),
         }
 
     def stability_color(self, d: Disc) -> str:
