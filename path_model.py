@@ -5,15 +5,15 @@ Chart convention (LOCKED):
   - Model +y = farther from tee
   - +x = right (RHBH turn/flip) · −x = left (RHBH fade)
 
-Innova plate truth (researched against official characteristic charts):
-  - Almost EVERY mold finishes with a LEFT hook at the tip (fade).
-  - Even Mamba / Roadrunner / Leopard / Wolf: big right mid, then tip curls left.
-  - OS (Firebird/Banshee/Gator/Pig): whole line lives left; finish is a sharp left crook.
-  - Straight (TeeBird/Mako/Aviar): near-vertical, gentle left finish only.
-  - US finish position may still sit right of the tee line — but final tangent is leftward.
-  - Labels on Innova sit at path ends; we put tee at bottom with names under tee.
+THE TWO QUESTIONS (product law):
+  1) Does it flip / push RIGHT before the finish?  (turn)
+  2) How far LEFT does it fade at the very end?   (fade)
 
-We match curve *grammar* (families + finishes), not pixel-traced art.
+Innova plate truth:
+  - Almost every mold finishes with a left tip hook.
+  - US: right mid (flip), then left crook — end may still sit right of tee.
+  - Straight: little/no right, gentle left finish.
+  - OS: little/no right, hard left finish (whole line often lives left).
 """
 
 from __future__ import annotations
@@ -66,11 +66,10 @@ def _logistic(t: float, mid: float, k: float) -> float:
 
 
 class PathModel:
-    """Innova-finish-faithful path generator.
+    """Path = (1) right flip amount + (2) left finish amount + carry.
 
-    Finish law (non-negotiable):
-      d(x)/dt < 0 near t→1 for essentially all molds (left hook).
-      Rated fade scales hook sharpness; fade 0 still gets a small natural finish.
+    Q1 flip right  ← turn (and a little speed)
+    Q2 fade left   ← fade (plus small natural tip curl)
     """
 
     def __init__(
@@ -79,12 +78,11 @@ class PathModel:
         length_base: float = 50.0,
         length_speed: float = 6.2,
         length_glide: float = 7.6,
-        turn_gain: float = 13.2,
-        fade_gain: float = 15.0,
-        # minimum end-hook so even 0-fade lines curl left like Innova putt/US tips
-        natural_finish: float = 3.8,
-        os_bow_gain: float = 4.8,
-        max_abs_x: float = 50.0,
+        turn_gain: float = 14.5,
+        fade_gain: float = 18.5,
+        natural_finish: float = 7.0,
+        os_bow_gain: float = 5.5,
+        max_abs_x: float = 52.0,
     ) -> None:
         self.length_base = length_base
         self.length_speed = length_speed
@@ -109,88 +107,75 @@ class PathModel:
         )
 
     def _turn_build(self, t: float, d: Disc) -> float:
-        """Turn displacement builds mid-flight, then STOPS (does not keep pushing at tip).
-
-        Innova US paths: max right is before the tip; tip is the fade crook.
-        """
-        # Faster discs hold high-speed turn a bit longer.
-        peak = 0.40 + 0.012 * max(0.0, min(6.0, d.speed - 5.0))
-        # Build to full by ~peak
-        build = _logistic(t, mid=peak * 0.5, k=13.0)
-        # After peak, freeze turn contribution (plateau) so fade can win the tip
-        # Slight decay so S-curves come back cleaner
-        freeze = 1.0 - 0.18 * _smoothstep(peak, min(0.95, peak + 0.40), t)
+        """Q1: flip/right push builds early-mid, freezes before tip."""
+        peak = 0.38 + 0.014 * max(0.0, min(6.0, d.speed - 5.0))
+        build = _logistic(t, mid=peak * 0.48, k=12.5)
+        freeze = 1.0 - 0.22 * _smoothstep(peak, min(0.96, peak + 0.42), t)
         return build * freeze
 
     def _fade_build(self, t: float, d: Disc) -> float:
-        """Fade is a late shepherd's crook — last ~25% of flight on Innova plates."""
-        # Higher rated fade bites slightly earlier and harder
+        """Q2: quiet early, decisive left crook at the end."""
         fade_n = max(0.0, d.fade)
-        mid = 0.78 - 0.025 * min(4.0, fade_n)
-        k = 20.0 + 2.0 * min(4.0, fade_n)
-        return _logistic(t, mid=mid, k=k)
+        mid = 0.70 - 0.02 * min(4.0, fade_n)
+        k = 16.0 + 1.3 * min(4.0, fade_n)
+        body = _logistic(t, mid=mid, k=k)
+        crook = t ** (4.0 - 0.12 * min(3.0, fade_n))
+        return 0.58 * body + 0.62 * crook
 
     def _os_bow(self, t: float, d: Disc) -> float:
-        """OS molds bow left for most of the flight (Firebird/Banshee/Gator), not only at tip."""
-        # Amount of "always left" character
-        os = max(0.0, d.fade - max(0.0, -d.turn) * 0.7)
+        """OS skips the right flip — line lives left (Firebird family)."""
+        os = max(0.0, d.fade - max(0.0, -d.turn) * 0.75)
         if os < 0.2:
             return 0.0
-        # Smooth left bow from early on
-        bow = _smoothstep(0.02, 0.45, t) * (0.65 + 0.35 * t)
+        bow = _smoothstep(0.02, 0.40, t) * (0.6 + 0.4 * t)
         return -self.os_bow_gain * os * bow
 
     def point(self, d: Disc, t: float) -> Point:
         t = _clamp01(t)
-
-        turn_n = float(d.turn)  # negative = US
+        turn_n = float(d.turn)
         fade_n = max(0.0, float(d.fade))
 
-        # --- lateral components ---
-        # Turn → right when turn_n negative
-        turn_x = (-turn_n) * self.turn_gain * self._turn_build(t, d)
-
-        # Extra mid bulge for very US (Mamba/Roadrunner) — still finishes left via fade
+        # Q1 — flip right
+        flip_x = (-turn_n) * self.turn_gain * self._turn_build(t, d)
         if turn_n <= -3.0:
-            mid_bulge = math.sin(math.pi * _clamp01(t / 0.92)) ** 1.08
-            turn_x *= 0.88 + 0.28 * mid_bulge
+            mid_bulge = math.sin(math.pi * _clamp01(t / 0.90)) ** 1.05
+            flip_x *= 0.86 + 0.32 * mid_bulge
 
-        # Rated fade → left crook at tip
-        fade_x = -fade_n * self.fade_gain * self._fade_build(t, d)
+        if d.speed >= 11 and -1.3 <= turn_n <= 0.0 and fade_n >= 2.5:
+            early = 1.0 - _smoothstep(0.0, 0.30, t)
+            flip_x *= 1.0 - 0.50 * early
 
-        # Natural finish: nearly all Innova lines curl left at the tip,
-        # even Classic Aviar (0 fade) and extreme US (still a left tip).
-        # Scale down a bit for already high-fade molds (already crooking hard).
-        nat_scale = 1.0 - 0.15 * min(4.0, fade_n)
-        # US discs still get full natural tip curl (critical for Leopard/Mamba tips)
-        natural_x = -self.natural_finish * nat_scale * self._fade_build(t, d)
-
-        # OS continuous left bow
+        # Q2 — finish left
+        finish_w = self._fade_build(t, d)
+        fade_x = -fade_n * self.fade_gain * finish_w
+        natural_x = -self.natural_finish * (1.0 - 0.12 * min(4.0, fade_n)) * finish_w
         bow_x = self._os_bow(t, d)
 
-        # High-speed beef (Destroyer/Wraith): keep early line tighter, dump late
-        if d.speed >= 11 and -1.3 <= turn_n <= 0.0 and fade_n >= 2.5:
-            early = 1.0 - _smoothstep(0.0, 0.32, t)
-            turn_x *= 1.0 - 0.45 * early
-
-        x = turn_x + fade_x + natural_x + bow_x
-
+        x = flip_x + fade_x + natural_x + bow_x
         if abs(x) > self.max_abs_x:
             x = math.copysign(self.max_abs_x + (abs(x) - self.max_abs_x) * 0.18, x)
 
-        y = t * self.length(d)
-        return (x, y)
+        return (x, t * self.length(d))
 
     def path(self, d: Disc, n: int = 72) -> List[Point]:
         if n < 2:
             n = 2
         return [self.point(d, i / (n - 1)) for i in range(n)]
 
-    def finish_dx(self, d: Disc, eps: float = 0.02) -> float:
-        """Lateral delta near tip; should be negative (left) for nearly all molds."""
-        x0 = self.point(d, 1.0 - eps)[0]
-        x1 = self.point(d, 1.0)[0]
-        return x1 - x0
+    def shape_metrics(self, d: Disc) -> dict:
+        """The two questions, quantified."""
+        pts = self.path(d, 80)
+        xs = [p[0] for p in pts]
+        max_right = max(xs)
+        flip = max(0.0, max_right)
+        i0 = int(0.85 * (len(xs) - 1))
+        tip_dx = xs[-1] - xs[i0]
+        return {
+            "flip_right": round(flip, 2),
+            "finish_x": round(xs[-1], 2),
+            "tip_dx": round(tip_dx, 2),
+            "flips": flip > 1.5,
+        }
 
     def stability_color(self, d: Disc) -> str:
         s = d.stab
