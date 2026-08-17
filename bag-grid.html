@@ -3,24 +3,25 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>discwhich — Lance bag grid (trial)</title>
+<title>discwhich — Lance field map (trial)</title>
 <style>
   :root {
     --bg: #0b0f14;
     --panel: #141b24;
-    --panel2: #1a2330;
     --line: #243041;
-    --line2: #2f3d52;
     --text: #eef2f7;
     --muted: #8b95a8;
     --faint: #5c677a;
     --accent: #5eead4;
-    --us: #2a9d8f;
-    --str: #e9c46a;
-    --os: #e85d04;
-    --vos: #c1121f;
+    --grass-deep: #0d1f14;
+    --grass: #14301c;
+    --grass-hi: #1a3d24;
+    --line-field: rgba(255,255,255,0.07);
+    --us: #2dd4bf;
+    --str: #f0d78c;
+    --os: #fb923c;
+    --vos: #f87171;
     --overlap: #f87171;
-    --empty: #0f1520;
   }
   * { box-sizing: border-box; }
   body {
@@ -32,11 +33,13 @@
   }
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  header {
-    padding: 22px 24px 8px;
-    max-width: 1100px;
+  header, footer, .below {
+    max-width: 980px;
     margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
   }
+  header { padding-top: 22px; padding-bottom: 8px; }
   .eyebrow {
     color: var(--accent);
     font-size: 12px;
@@ -46,20 +49,21 @@
   }
   h1 {
     margin: 8px 0 6px;
-    font-size: 28px;
+    font-size: 26px;
     letter-spacing: -0.02em;
   }
   .sub {
     color: var(--muted);
     font-size: 14px;
     line-height: 1.5;
-    max-width: 62ch;
+    max-width: 64ch;
   }
   .meta {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 14px;
+    margin-bottom: 8px;
   }
   .chip {
     border: 1px solid var(--line);
@@ -70,16 +74,263 @@
     border-radius: 999px;
   }
   .chip strong { color: var(--text); font-weight: 600; }
-  main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 12px 24px 48px;
+
+  /* —— field stage —— */
+  .stage-wrap {
+    max-width: 980px;
+    margin: 12px auto 0;
+    padding: 0 16px 8px;
   }
+  .stage {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #1e3a28;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    background:
+      radial-gradient(120% 80% at 50% 100%, rgba(20,48,28,0.9), transparent 55%),
+      linear-gradient(180deg, #0a1810 0%, #0f2416 40%, #12301a 100%);
+  }
+  .field {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    min-height: 560px;
+    max-height: 820px;
+  }
+
+  /* grass stripes */
+  .field::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.015) 0 28px,
+        rgba(0,0,0,0.04) 28px 56px
+      ),
+      radial-gradient(ellipse 90% 40% at 50% 8%, rgba(255,255,255,0.04), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* distance bands (far → near = top → bottom) */
+  .band {
+    position: absolute;
+    left: 0; right: 0;
+    border-top: 1px dashed var(--line-field);
+    pointer-events: none;
+  }
+  .band-label {
+    position: absolute;
+    left: 10px;
+    top: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(238,242,247,0.28);
+  }
+  .band.distance { top: 0; height: 18%; }
+  .band.hybrid { top: 18%; height: 20%; }
+  .band.fairway { top: 38%; height: 20%; }
+  .band.mid { top: 58%; height: 16%; }
+  .band.putt { top: 74%; height: 14%; }
+
+  /* L/R stability guides */
+  .vguide {
+    position: absolute;
+    top: 0; bottom: 18%;
+    width: 0;
+    border-left: 1px dashed rgba(255,255,255,0.06);
+    pointer-events: none;
+  }
+  .vguide.us { left: 18%; }
+  .vguide.str-l { left: 38%; }
+  .vguide.str-r { left: 62%; }
+  .vguide.os { left: 82%; }
+
+  .col-tags {
+    position: absolute;
+    top: 8px;
+    left: 0; right: 0;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr 0.9fr;
+    padding: 0 6% 0 6%;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .col-tags span {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+  .col-tags .t-us { color: var(--us); }
+  .col-tags .t-str { color: var(--str); }
+  .col-tags .t-os { color: var(--os); }
+  .col-tags .t-vos { color: var(--vos); }
+
+  /* thrower zone */
+  .thrower-zone {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 0;
+    height: 12%;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.35));
+    border-top: 1px solid rgba(255,255,255,0.08);
+    z-index: 3;
+  }
+  .thrower {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 4;
+  }
+  .thrower-svg {
+    width: 44px;
+    height: 52px;
+    display: block;
+    margin: 0 auto 2px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  }
+  .thrower-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(238,242,247,0.55);
+  }
+  .tee-pad {
+    position: absolute;
+    left: 50%;
+    bottom: 58px;
+    transform: translateX(-50%);
+    width: 54px;
+    height: 18px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    z-index: 3;
+  }
+
+  /* depth arrow */
+  .depth-hint {
+    position: absolute;
+    right: 10px;
+    top: 42%;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    transform: translateY(-50%) rotate(180deg);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(238,242,247,0.22);
+    font-weight: 700;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* disc landing blobs */
+  .disc {
+    position: absolute;
+    z-index: 5;
+    width: 118px;
+    margin-left: -59px;
+    margin-top: -28px;
+    cursor: default;
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+  .disc:hover {
+    transform: scale(1.06);
+    z-index: 8;
+    filter: brightness(1.08);
+  }
+  .disc.overlap .blob {
+    box-shadow: 0 0 0 1px rgba(248,113,113,0.55), 0 10px 24px rgba(0,0,0,0.4);
+  }
+  .blob {
+    border-radius: 999px;
+    padding: 10px 12px 9px;
+    background: rgba(15, 22, 18, 0.88);
+    border: 1.5px solid rgba(255,255,255,0.14);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+    text-align: center;
+  }
+  .blob.us { border-color: rgba(45,212,191,0.55); background: rgba(10, 32, 28, 0.9); }
+  .blob.str { border-color: rgba(240,215,140,0.5); background: rgba(32, 28, 14, 0.9); }
+  .blob.os { border-color: rgba(251,146,60,0.55); background: rgba(36, 22, 12, 0.9); }
+  .blob.vos { border-color: rgba(248,113,113,0.6); background: rgba(40, 14, 16, 0.9); }
+
+  .d-name {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+  .d-nums {
+    margin-top: 3px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .d-tag {
+    margin-top: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ghost-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 72px;
+    height: 36px;
+    margin: -18px 0 0 -36px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(255,255,255,0.12);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* empty shot markers (subtle) */
+  .gap {
+    position: absolute;
+    z-index: 1;
+    width: 70px;
+    margin-left: -35px;
+    margin-top: -12px;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(238,242,247,0.18);
+    pointer-events: none;
+  }
+  .gap::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 18px;
+    margin: 0 auto 4px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,255,255,0.12);
+  }
+
   .legend {
     display: flex;
     flex-wrap: wrap;
     gap: 10px 16px;
-    margin: 8px 0 18px;
+    margin: 14px 0 6px;
     font-size: 12px;
     color: var(--muted);
   }
@@ -87,148 +338,17 @@
     display: inline-block;
     width: 10px;
     height: 10px;
-    border-radius: 2px;
+    border-radius: 999px;
     margin-right: 6px;
     vertical-align: -1px;
   }
-  .grid-wrap {
-    overflow-x: auto;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: linear-gradient(180deg, #121922 0%, #0d1219 100%);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
-  }
-  table.bag {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    min-width: 820px;
-  }
-  table.bag th, table.bag td {
-    border-right: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    vertical-align: top;
-  }
-  table.bag th:last-child, table.bag td:last-child { border-right: 0; }
-  table.bag tr:last-child td { border-bottom: 0; }
-  table.bag thead th {
-    background: #101820;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 14px 12px;
-    text-align: center;
-  }
-  table.bag thead th .col-name { display: block; color: var(--text); font-size: 13px; letter-spacing: 0.04em; margin-bottom: 2px; }
-  table.bag thead th.us .col-name { color: #5eead4; }
-  table.bag thead th.str .col-name { color: #f0d78c; }
-  table.bag thead th.os .col-name { color: #ff9f4a; }
-  table.bag thead th.vos .col-name { color: #ff6b6b; }
-  table.bag tbody th.row-h {
-    width: 128px;
-    background: #101820;
-    text-align: left;
-    padding: 14px 12px;
-    font-size: 12px;
-    color: var(--text);
-    font-weight: 700;
-  }
-  table.bag tbody th.row-h span {
-    display: block;
-    color: var(--faint);
-    font-weight: 500;
-    font-size: 11px;
-    margin-top: 4px;
-  }
-  td.cell {
-    padding: 10px;
-    min-height: 110px;
-    height: 118px;
-    background: var(--empty);
-  }
-  td.cell.filled {
-    background:
-      radial-gradient(120% 100% at 50% 0%, rgba(94,234,212,0.05), transparent 55%),
-      var(--panel);
-  }
-  td.cell.overlap {
-    background:
-      radial-gradient(120% 100% at 50% 0%, rgba(248,113,113,0.08), transparent 55%),
-      #1a1520;
-  }
-  td.cell.empty-mark {
-    background-image:
-      linear-gradient(45deg, transparent 46%, rgba(36,48,65,0.55) 49%, rgba(36,48,65,0.55) 51%, transparent 54%);
-  }
-  .empty-label {
-    color: var(--faint);
-    font-size: 11px;
-    text-align: center;
-    padding-top: 34px;
-    letter-spacing: 0.04em;
-  }
-  .disc {
-    border: 1px solid var(--line2);
-    background: var(--panel2);
-    border-radius: 12px;
-    padding: 10px 10px 9px;
-    margin-bottom: 8px;
-  }
-  .disc:last-child { margin-bottom: 0; }
-  .disc.dup {
-    border-color: rgba(248,113,113,0.45);
-  }
-  .disc-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    align-items: baseline;
-  }
-  .disc-name {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-  .disc-nums {
-    font-variant-numeric: tabular-nums;
-    font-size: 12px;
-    color: var(--accent);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .disc-meta {
-    margin-top: 5px;
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 10px;
-  }
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    border-radius: 999px;
-    padding: 2px 7px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--line);
-  }
-  .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-  }
-  .dot.us { background: var(--us); }
-  .dot.str { background: var(--str); }
-  .dot.os { background: var(--os); }
-  .dot.vos { background: var(--vos); }
-  section.notes {
-    margin-top: 22px;
+
+  .below { padding-top: 8px; padding-bottom: 40px; }
+  .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 12px;
+    margin-top: 16px;
   }
   .card {
     background: var(--panel);
@@ -238,277 +358,218 @@
   }
   .card h2 {
     margin: 0 0 8px;
-    font-size: 13px;
-    letter-spacing: 0.06em;
+    font-size: 12px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
   }
   .card ul {
     margin: 0;
     padding-left: 18px;
-    color: var(--text);
     font-size: 13px;
     line-height: 1.55;
   }
-  .card li { margin: 4px 0; }
-  .card .muted { color: var(--muted); }
+  .card li { margin: 3px 0; }
   footer {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 24px 36px;
+    padding-bottom: 32px;
     color: var(--faint);
     font-size: 12px;
   }
-  .path-note {
-    margin-top: 18px;
-    border: 1px dashed var(--line2);
-    border-radius: 14px;
-    padding: 14px 16px;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.5;
+
+  @media (max-width: 640px) {
+    .disc { width: 96px; margin-left: -48px; }
+    .d-name { font-size: 11px; }
+    .d-nums { font-size: 10px; }
+    .field { min-height: 520px; }
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="eyebrow">discwhich · trial</div>
-  <h1>Lance bag — shot grid</h1>
+  <div class="eyebrow">discwhich · field map trial</div>
+  <h1>Lance bag — overhead field</h1>
   <p class="sub">
-    Prototype placement only. <strong>Row = speed</strong> · <strong>Column = turn + fade</strong> ·
-    glide is carry tag (short / normal / long). Path engine is separate — not used to place cells.
+    Drone view. <strong>You at middle-bottom</strong>. Fairway runs <strong>up the page</strong> (farther = higher).
+    Left/right = shape (RHBH: left = fade/OS, right = flip/US). Putters sit closest to the tee.
   </p>
   <div class="meta">
-    <div class="chip"><strong>10</strong> discs</div>
-    <div class="chip"><strong>8</strong> filled cells</div>
-    <div class="chip"><strong>2</strong> overlaps</div>
-    <div class="chip">Aviar numbers = <strong>Aviar P&amp;A</strong> stock</div>
+    <div class="chip"><strong>10</strong> discs placed</div>
+    <div class="chip">near → far = putt → distance</div>
+    <div class="chip">Aviar = <strong>closest</strong></div>
     <div class="chip"><a href="./">← main prototype</a></div>
   </div>
 </header>
-<main>
+
+<div class="stage-wrap">
   <div class="legend">
-    <span><i class="swatch" style="background:var(--us)"></i>US — flip / right then left</span>
-    <span><i class="swatch" style="background:var(--str)"></i>STR — workhorse straight</span>
-    <span><i class="swatch" style="background:var(--os)"></i>OS — reliable left finish</span>
-    <span><i class="swatch" style="background:var(--vos)"></i>VOS — beef / wind</span>
-    <span><i class="swatch" style="background:var(--overlap)"></i>overlap cell</span>
+    <span><i class="swatch" style="background:var(--us)"></i>US (flip right)</span>
+    <span><i class="swatch" style="background:var(--str)"></i>STR</span>
+    <span><i class="swatch" style="background:var(--os)"></i>OS</span>
+    <span><i class="swatch" style="background:var(--vos)"></i>VOS</span>
+    <span>overlap = two molds, same shot</span>
   </div>
 
-  <div class="grid-wrap">
-    <table class="bag" aria-label="Lance disc bag shot grid">
-      <thead>
-        <tr>
-          <th style="width:128px; text-align:left; padding-left:14px;">Speed class</th>
-          <th class="us"><span class="col-name">US</span>turn / flip</th>
-          <th class="str"><span class="col-name">STR</span>neutral</th>
-          <th class="os"><span class="col-name">OS</span>stable</th>
-          <th class="vos"><span class="col-name">VOS</span>overstable</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Putt/Approach -->
-        <tr>
-          <th class="row-h">Putt / Approach<span>speed 1–3</span></th>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell filled">
-            <div class="disc">
-              <div class="disc-top">
-                <div class="disc-name">Aviar</div>
-                <div class="disc-nums">2/3/0/1</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot str"></i>STR</span>
-                <span class="pill">carry normal</span>
-                <span class="pill">Aviar P&amp;A</span>
-              </div>
-            </div>
-          </td>
-          <td class="cell filled">
-            <div class="disc">
-              <div class="disc-top">
-                <div class="disc-name">Aviar X3</div>
-                <div class="disc-nums">3/2/0/3</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot os"></i>OS</span>
-                <span class="pill">carry short</span>
-              </div>
-            </div>
-          </td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-        </tr>
+  <div class="stage" role="img" aria-label="Overhead field map of Lance disc bag with thrower at bottom center">
+    <div class="field" id="field">
+      <div class="col-tags">
+        <span class="t-us">US</span>
+        <span class="t-str">STR</span>
+        <span class="t-os">OS</span>
+        <span class="t-vos">VOS</span>
+      </div>
 
-        <!-- Mid -->
-        <tr>
-          <th class="row-h">Mid<span>speed 4–5</span></th>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell filled overlap">
-            <div class="disc dup">
-              <div class="disc-top">
-                <div class="disc-name">Atlas</div>
-                <div class="disc-nums">5/4/0/1</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot str"></i>STR</span>
-                <span class="pill">carry normal</span>
-                <span class="pill">overlap</span>
-              </div>
-            </div>
-            <div class="disc dup">
-              <div class="disc-top">
-                <div class="disc-name">Mako3</div>
-                <div class="disc-nums">5/5/0/0</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot str"></i>STR</span>
-                <span class="pill">carry long</span>
-                <span class="pill">overlap</span>
-              </div>
-            </div>
-          </td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-        </tr>
+      <div class="band distance"><span class="band-label">Distance · 12–14</span></div>
+      <div class="band hybrid"><span class="band-label">Control / Hybrid · 10–11</span></div>
+      <div class="band fairway"><span class="band-label">Fairway · 6–9</span></div>
+      <div class="band mid"><span class="band-label">Mid · 4–5</span></div>
+      <div class="band putt"><span class="band-label">Putt / Approach · 1–3</span></div>
 
-        <!-- Fairway -->
-        <tr>
-          <th class="row-h">Fairway<span>speed 6–9</span></th>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell filled">
-            <div class="disc">
-              <div class="disc-top">
-                <div class="disc-name">TB3</div>
-                <div class="disc-nums">8/4/0/2</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot str"></i>STR</span>
-                <span class="pill">carry normal</span>
-                <span class="pill">Teebird3</span>
-              </div>
-            </div>
-          </td>
-          <td class="cell filled">
-            <div class="disc">
-              <div class="disc-top">
-                <div class="disc-name">Banshee</div>
-                <div class="disc-nums">7/3/0/3</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot os"></i>OS</span>
-                <span class="pill">carry normal</span>
-              </div>
-            </div>
-          </td>
-          <td class="cell filled">
-            <div class="disc">
-              <div class="disc-top">
-                <div class="disc-name">Firebird</div>
-                <div class="disc-nums">9/3/0/4</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot vos"></i>VOS</span>
-                <span class="pill">carry normal</span>
-              </div>
-            </div>
-          </td>
-        </tr>
+      <div class="vguide us"></div>
+      <div class="vguide str-l"></div>
+      <div class="vguide str-r"></div>
+      <div class="vguide os"></div>
 
-        <!-- Control/Hybrid -->
-        <tr>
-          <th class="row-h">Control / Hybrid<span>speed 10–11</span></th>
-          <td class="cell filled overlap">
-            <div class="disc dup">
-              <div class="disc-top">
-                <div class="disc-name">Mystere</div>
-                <div class="disc-nums">11/6/−2/2</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot us"></i>US</span>
-                <span class="pill">carry long</span>
-                <span class="pill">overlap</span>
-              </div>
-            </div>
-            <div class="disc dup">
-              <div class="disc-top">
-                <div class="disc-name">Archon</div>
-                <div class="disc-nums">11/5/−2/2</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot us"></i>US</span>
-                <span class="pill">carry long</span>
-                <span class="pill">overlap</span>
-              </div>
-            </div>
-          </td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell filled">
-            <div class="disc">
-              <div class="disc-top">
-                <div class="disc-name">Orc</div>
-                <div class="disc-nums">10/4/−1/3</div>
-              </div>
-              <div class="disc-meta">
-                <span class="pill"><i class="dot os"></i>OS</span>
-                <span class="pill">carry normal</span>
-              </div>
-            </div>
-          </td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-        </tr>
+      <div class="depth-hint">farther ↑</div>
 
-        <!-- Distance -->
-        <tr>
-          <th class="row-h">Distance<span>speed 12–14</span></th>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
-        </tr>
-      </tbody>
-    </table>
+      <!-- empty shot whispers -->
+      <div class="gap" style="left:18%; top:66%;">mid US</div>
+      <div class="gap" style="left:18%; top:48%;">fw US</div>
+      <div class="gap" style="left:50%; top:28%;">hyb STR</div>
+      <div class="gap" style="left:50%; top:10%;">dist</div>
+
+      <!-- discs: left% / top% of field (thrower bottom). placed by algorithm -->
+      <!-- PUTT row ~ top 80% (near thrower) -->
+      <div class="disc" style="left:50%; top:80%;" title="Aviar — closest to tee">
+        <div class="blob str">
+          <div class="d-name">Aviar</div>
+          <div class="d-nums">2/3/0/1</div>
+          <div class="d-tag">closest · STR putt</div>
+        </div>
+      </div>
+      <div class="disc" style="left:74%; top:78%;" title="Aviar X3">
+        <div class="blob os">
+          <div class="d-name">Aviar X3</div>
+          <div class="d-nums">3/2/0/3</div>
+          <div class="d-tag">OS approach</div>
+        </div>
+      </div>
+
+      <!-- MID ~ 66% -->
+      <div class="disc overlap" style="left:46%; top:64%;" title="Atlas">
+        <div class="blob str">
+          <div class="d-name">Atlas</div>
+          <div class="d-nums">5/4/0/1</div>
+          <div class="d-tag">mid STR</div>
+        </div>
+      </div>
+      <div class="disc overlap" style="left:56%; top:61%;" title="Mako3 — longer carry than Atlas">
+        <div class="blob str">
+          <div class="d-name">Mako3</div>
+          <div class="d-nums">5/5/0/0</div>
+          <div class="d-tag">mid STR · long</div>
+        </div>
+      </div>
+
+      <!-- FAIRWAY ~ 46–50% -->
+      <div class="disc" style="left:50%; top:50%;" title="TB3">
+        <div class="blob str">
+          <div class="d-name">TB3</div>
+          <div class="d-nums">8/4/0/2</div>
+          <div class="d-tag">workhorse fw</div>
+        </div>
+      </div>
+      <div class="disc" style="left:74%; top:48%;" title="Banshee">
+        <div class="blob os">
+          <div class="d-name">Banshee</div>
+          <div class="d-nums">7/3/0/3</div>
+          <div class="d-tag">OS fairway</div>
+        </div>
+      </div>
+      <div class="disc" style="left:88%; top:46%;" title="Firebird">
+        <div class="blob vos">
+          <div class="d-name">Firebird</div>
+          <div class="d-nums">9/3/0/4</div>
+          <div class="d-tag">VOS / wind</div>
+        </div>
+      </div>
+
+      <!-- HYBRID ~ 26–32% -->
+      <div class="disc overlap" style="left:16%; top:30%;" title="Mystere">
+        <div class="blob us">
+          <div class="d-name">Mystere</div>
+          <div class="d-nums">11/6/−2/2</div>
+          <div class="d-tag">flip-D · long</div>
+        </div>
+      </div>
+      <div class="disc overlap" style="left:28%; top:27%;" title="Archon">
+        <div class="blob us">
+          <div class="d-name">Archon</div>
+          <div class="d-nums">11/5/−2/2</div>
+          <div class="d-tag">flip-D</div>
+        </div>
+      </div>
+      <div class="disc" style="left:74%; top:29%;" title="Orc">
+        <div class="blob os">
+          <div class="d-name">Orc</div>
+          <div class="d-nums">10/4/−1/3</div>
+          <div class="d-tag">OS hybrid</div>
+        </div>
+      </div>
+
+      <div class="tee-pad" aria-hidden="true"></div>
+      <div class="thrower-zone"></div>
+      <div class="thrower">
+        <!-- simple thrower silhouette, back to camera, facing upfield -->
+        <svg class="thrower-svg" viewBox="0 0 44 52" aria-hidden="true">
+          <ellipse cx="22" cy="48" rx="12" ry="3" fill="rgba(0,0,0,0.35)"/>
+          <circle cx="22" cy="10" r="5.5" fill="#c5cdd8"/>
+          <path d="M14 18c2-3 14-3 16 0l3 14c.4 2-1 3-2.5 2.5L28 28v14c0 1.2-.8 2-2 2h-8c-1.2 0-2-.8-2-2V28l-2.5 6.5c-1.5.5-2.9-.5-2.5-2.5L14 18z" fill="#9aa6b5"/>
+          <path d="M12 20c-4 2-7 1-8-1" stroke="#9aa6b5" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <path d="M32 20c4 2 7 1 8-1" stroke="#9aa6b5" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <circle cx="38" cy="16" r="3" fill="none" stroke="var(--accent)" stroke-width="1.4" opacity="0.8"/>
+        </svg>
+        <div class="thrower-label">you · tee</div>
+      </div>
+    </div>
   </div>
+</div>
 
-  <section class="notes">
+<div class="below">
+  <div class="cards">
     <div class="card">
-      <h2>Placement rules</h2>
+      <h2>How to read this</h2>
       <ul>
-        <li><strong>Row</strong> from speed only (glide → carry tag)</li>
-        <li><strong>Col</strong> from turn + fade (fade-aware, not turn+fade sum)</li>
-        <li>VOS if fade ≥ 3.5 and turn ≥ −0.5</li>
-        <li>OS if fade ≥ 3 and turn ≥ −1 and stab ≥ 1.5</li>
-        <li>US if turn ≤ −2, or turn ≤ −1 with fade ≤ 1</li>
-        <li>else STR</li>
+        <li><strong>Bottom center</strong> = thrower / tee</li>
+        <li><strong>Up the page</strong> = farther down the fairway</li>
+        <li><strong>Aviar</strong> sits just in front of you</li>
+        <li><strong>Mystere / Archon</strong> deepest among your bag (still hybrid band)</li>
+        <li><strong>Right side</strong> = more OS / fade finish (RHBH)</li>
+        <li><strong>Left side</strong> = more US / flip</li>
       </ul>
     </div>
     <div class="card">
-      <h2>What the grid says</h2>
+      <h2>Same placement math</h2>
       <ul>
-        <li>OS ladder is clean: X3 → Banshee → Orc → Firebird</li>
-        <li>Mid STR stacked: Atlas + Mako3</li>
-        <li>Flip-D stacked: Mystere + Archon (same cell by design)</li>
-        <li>No speed-12+ Distance row — max D sits Hybrid 10–11</li>
-        <li class="muted">Empty that matter later: Mid US, Fairway US, Hybrid STR</li>
+        <li>Depth band = speed row</li>
+        <li>Left–right lane = turn + fade col</li>
+        <li>Glide nudges depth inside the band (Mako3 slightly past Atlas)</li>
+        <li>Not flight-path curves — those are algorithm B</li>
       </ul>
     </div>
     <div class="card">
-      <h2>Not on this page yet</h2>
+      <h2>What jumps out</h2>
       <ul>
-        <li>Flight-line plate (separate algorithm)</li>
-        <li>Field-map landing zones</li>
-        <li>Plastic / beat-in offsets</li>
-        <li>Arm-speed scaling</li>
+        <li>Near game covered STR + OS</li>
+        <li>Fairway has a clean STR → OS → VOS ladder on the right</li>
+        <li>Deep left stacked (Mystere + Archon)</li>
+        <li>Empty grass: mid US, fairway US, hybrid STR, pure distance</li>
       </ul>
     </div>
-  </section>
-
-  <div class="path-note">
-    <strong style="color:var(--text)">Trial build.</strong>
-    Grid algorithm only — numbers → cell. Next visual pass can add path thumbnails per disc without changing placement.
   </div>
-</main>
+</div>
+
 <footer>
-  discwhich bag-grid trial · tee/path orientation not used here ·
+  discwhich field-map trial · thrower bottom · flight up · RHBH ·
   <a href="https://github.com/thecooperativeagency/whichdisc">repo</a>
 </footer>
 </body>
