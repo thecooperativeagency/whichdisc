@@ -48,7 +48,8 @@ def row_for(speed: float) -> int:
 
 
 def col_for(turn: float, fade: float) -> int:
-    raw = (-turn) * 2 - fade
+    # Flight numbers: neg turn (US) → neg col → RIGHT; pos fade (OS) → pos col → LEFT
+    raw = turn * 2 + fade
     return clamp_int(raw, -4, 4)
 
 
@@ -61,13 +62,14 @@ def carry_tag(glide: float) -> str:
 
 
 def stab_class(col: int) -> str:
-    if col <= -3:
+    # col+ = OS/left, col- = US/right
+    if col >= 3:
         return "vos"
-    if col <= -1:
+    if col >= 1:
         return "os"
     if col == 0:
         return "str"
-    if col <= 2:
+    if col >= -2:
         return "soft-us"
     return "us"
 
@@ -100,7 +102,7 @@ def place(d: Disc) -> dict:
         "row": r,
         "col": c,
         "carry": carry_tag(d.glide),
-        "raw_col": (-d.turn) * 2 - d.fade,
+        "raw_col": d.turn * 2 + d.fade,
         "stab": stab_class(c),
         "note": d.note,
     }
@@ -115,7 +117,7 @@ def build_html(placed: list[dict]) -> str:
         stack_i = cell_counts[key]
         cell_counts[key] += 1
         # CSS grid: col 1..9 = -4..+4; row 1..14 = speed 14..1 (top=far)
-        css_col = p["col"] + 5  # -4→1 … +4→9
+        css_col = 5 - p["col"]  # +4→1 (left) … -4→9 (right)
         css_row = 15 - p["row"]  # speed 14→1, speed 1→14
         marks.append({**p, "css_col": css_col, "css_row": css_row, "stack": stack_i})
 
@@ -550,7 +552,7 @@ def build_html(placed: list[dict]) -> str:
   <div class="top">
     <div class="eyebrow">discwhich · 14×9 field</div>
     <h1>Your bag on the fairway</h1>
-    <p class="sub">Phone layout. Tee at bottom. Farther = higher. Left = OS/fade (−). Right = flip/US (+). Same math every disc.</p>
+    <p class="sub">Phone layout. Tee at bottom. Farther = higher. Left = + OS/fade. Right = − flip/US. Flight-number axis. Same math every disc.</p>
     <div class="chips">
       <div class="chip">TB3 <b>{tb3['row']},{tb3['col']:+d}</b></div>
       <div class="chip">X3 <b>{x3['col']:+d}</b> · Aviar <b>{av['col']:+d}</b></div>
@@ -560,11 +562,11 @@ def build_html(placed: list[dict]) -> str:
 
   <div class="stage">
     <div class="axis-x" aria-hidden="true">
-      <div class="end">OS</div>
+      <div class="end">OS +</div>
       <div class="mid">
-        <span>-4</span><span>-3</span><span>-2</span><span>-1</span><span class="z">0</span><span>+1</span><span>+2</span><span>+3</span><span>+4</span>
+        <span>+4</span><span>+3</span><span>+2</span><span>+1</span><span class="z">0</span><span>−1</span><span>−2</span><span>−3</span><span>−4</span>
       </div>
-      <div class="end r">US</div>
+      <div class="end r">US −</div>
     </div>
 
     <div class="field-wrap">
@@ -586,7 +588,8 @@ def build_html(placed: list[dict]) -> str:
     <summary>Placement log · formula</summary>
     <p class="sub" style="margin:8px 0 0">
       <span class="mono">row = clamp(round(speed),1,14)</span><br/>
-      <span class="mono">col = clamp(round((-turn)*2 - fade),-4,+4)</span>
+      <span class="mono">col = clamp(round(turn*2 + fade),-4,+4)</span><br/>
+      <span class="mono">chart: + left (OS) · − right (US)</span>
     </p>
     <table class="dbg">
       <thead><tr><th>Disc</th><th>Numbers</th><th>Row</th><th>Col</th><th>Raw</th></tr></thead>
