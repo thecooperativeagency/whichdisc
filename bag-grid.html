@@ -3,15 +3,21 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>discwhich — Lance field map</title>
+<title>discwhich — 14×9 bag grid</title>
 <style>
   :root {
-    --bg: #0a0e12;
-    --text: #f3f5f7;
-    --muted: #9aa3b2;
-    --faint: #6b7382;
-    --accent: #6ee7d0;
-    --card: rgba(10, 14, 18, 0.82);
+    --bg: #0b0f14;
+    --panel: #121a22;
+    --line: #243041;
+    --text: #eef2f7;
+    --muted: #8b95a8;
+    --faint: #5c677a;
+    --accent: #5eead4;
+    --os: #fb923c;
+    --us: #2dd4bf;
+    --zero: #f0d78c;
+    --fill: #1a2733;
+    --overlap: #3a1d24;
   }
   * { box-sizing: border-box; }
   body {
@@ -21,406 +27,254 @@
     color: var(--text);
   }
   a { color: var(--accent); text-decoration: none; }
-  header {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 20px 20px 10px;
-  }
-  .eyebrow {
-    color: var(--accent);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-  }
-  h1 {
-    margin: 6px 0 6px;
-    font-size: 24px;
-    letter-spacing: -.02em;
-  }
-  .sub {
-    margin: 0;
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.45;
-    max-width: 54ch;
-  }
-  .sub strong { color: #dfe6ef; font-weight: 650; }
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-  }
-  .chip {
-    font-size: 12px;
-    color: var(--muted);
-    border: 1px solid #243041;
-    background: #121820;
-    border-radius: 999px;
-    padding: 5px 10px;
-  }
+  header, main, footer { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  header { padding-top: 20px; }
+  .eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  h1 { margin: 6px 0; font-size: 24px; letter-spacing: -.02em; }
+  .sub { color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 70ch; }
+  .sub code { color: #d9e2ec; font-size: 12.5px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 12px; padding: 5px 10px; border-radius: 999px; }
+  .chip strong { color: var(--text); }
+  .ok { color: #6ee7b7; }
+  .warn { color: #fbbf24; }
 
-  /* ========== FIELD ========== */
-  .stage {
-    max-width: 880px;
-    margin: 14px auto 0;
-    padding: 0 14px 8px;
+  .field-shell {
+    margin: 14px 0 8px;
+    border: 1px solid #1e3a28;
+    border-radius: 16px;
+    overflow: auto;
+    background:
+      linear-gradient(180deg, rgba(12,28,18,.55), rgba(10,16,12,.92)),
+      repeating-linear-gradient(90deg, #12301c 0 36px, #102b19 36px 72px);
+    box-shadow: 0 18px 50px rgba(0,0,0,.4);
   }
-  .field {
-    position: relative;
+  table.g {
     width: 100%;
-    aspect-ratio: 3 / 4;
-    min-height: 620px;
-    border-radius: 22px;
-    overflow: hidden;
-    isolation: isolate;
-    box-shadow: 0 30px 80px rgba(0,0,0,.5);
-    /* quiet fairway — no chart chrome */
-    background:
-      radial-gradient(ellipse 70% 35% at 50% 100%, rgba(0,0,0,.45), transparent 70%),
-      radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255,255,255,.03), transparent 55%),
-      repeating-linear-gradient(
-        90deg,
-        #16351f 0px,
-        #16351f 42px,
-        #14311c 42px,
-        #14311c 84px
-      ),
-      linear-gradient(180deg, #0c1c12 0%, #14351d 55%, #0f2816 100%);
-    border: 1px solid #1b3a25;
+    min-width: 860px;
+    border-collapse: collapse;
+    table-layout: fixed;
   }
-
-  /* soft depth only — no labeled spreadsheet rows */
-  .haze {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.03), transparent 18%),
-      linear-gradient(0deg, rgba(0,0,0,.25), transparent 22%);
+  .corner {
+    width: 44px;
+    background: rgba(0,0,0,.35);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    border-right: 1px solid rgba(255,255,255,.08);
   }
-
-  /* very faint center corridor */
-  .corridor {
-    position: absolute;
-    left: 50%;
-    top: 6%;
-    bottom: 14%;
-    width: 2px;
-    transform: translateX(-50%);
-    background: linear-gradient(180deg, transparent, rgba(255,255,255,.08), transparent);
-    pointer-events: none;
-  }
-
-  /* side whispers — correct RHBH from behind thrower */
-  .side {
-    position: absolute;
-    top: 10%;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: rgba(243,245,247,.22);
-    pointer-events: none;
-  }
-  .side.left { left: 14px; }   /* fade / OS */
-  .side.right { right: 14px; } /* flip / US */
-  .far {
-    position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: rgba(243,245,247,.2);
-    pointer-events: none;
-  }
-
-  /* tee + thrower */
-  .tee {
-    position: absolute;
-    left: 50%;
-    bottom: 7.5%;
-    width: 64px;
-    height: 22px;
-    margin-left: -32px;
-    border-radius: 8px;
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.14);
-    box-shadow: 0 8px 18px rgba(0,0,0,.25);
-    z-index: 3;
-  }
-  .thrower {
-    position: absolute;
-    left: 50%;
-    bottom: 1.8%;
-    transform: translateX(-50%);
-    z-index: 4;
+  th.colh {
+    position: sticky; top: 0;
+    z-index: 2;
+    background: rgba(8,14,12,.92);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 750;
+    padding: 10px 4px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
     text-align: center;
   }
-  .thrower svg {
-    width: 40px;
-    height: 48px;
-    display: block;
-    margin: 0 auto;
-    filter: drop-shadow(0 3px 6px rgba(0,0,0,.45));
+  th.colh.zero { color: var(--zero); }
+  th.rowh {
+    width: 44px;
+    background: rgba(8,14,12,.75);
+    color: var(--faint);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,.08);
+    border-bottom: 1px solid rgba(255,255,255,.05);
   }
-  .thrower span {
-    display: block;
-    margin-top: 1px;
-    font-size: 9px;
+  th.rowh span {
+    display: inline-block;
+    min-width: 1.2em;
+  }
+  td.cell {
+    height: 52px;
+    border-right: 1px solid rgba(255,255,255,.045);
+    border-bottom: 1px solid rgba(255,255,255,.045);
+    vertical-align: middle;
+    padding: 3px;
+    text-align: center;
+  }
+  /* center column emphasis */
+  td.cell[data-c="0"], th.colh.zero {
+    box-shadow: inset 0 0 0 1px rgba(240,215,140,.08);
+  }
+  td.cell.empty { background: transparent; }
+  td.cell.filled {
+    background: rgba(20, 36, 28, .88);
+  }
+  td.cell.overlap {
+    background: var(--overlap);
+  }
+  .disc {
+    display: inline-block;
+    min-width: 72px;
+    margin: 1px;
+    padding: 4px 6px 3px;
+    border-radius: 8px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .disc .name {
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.15;
+  }
+  .disc .nums {
+    font-size: 10px;
+    font-weight: 650;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .axis {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 48px 0 52px;
+    color: rgba(238,242,247,.35);
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: .12em;
     text-transform: uppercase;
-    color: rgba(243,245,247,.45);
   }
-
-  /* landing markers — disc-like, not form cards */
-  .mark {
-    position: absolute;
-    z-index: 5;
-    width: 92px;
-    transform: translate(-50%, -50%);
+  .thrower {
     text-align: center;
+    padding: 10px 0 14px;
+    color: rgba(238,242,247,.5);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
   }
-  .mark:hover { z-index: 9; }
-  .mark:hover .plate { transform: scale(1.06); }
-
-  .plate {
-    width: 54px;
-    height: 54px;
-    margin: 0 auto 6px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    transition: transform .12s ease;
-    box-shadow:
-      0 10px 18px rgba(0,0,0,.35),
-      inset 0 1px 0 rgba(255,255,255,.18),
-      inset 0 -8px 16px rgba(0,0,0,.25);
-    border: 2px solid rgba(255,255,255,.2);
-    position: relative;
-  }
-  .plate::after {
-    content: "";
-    position: absolute;
-    inset: 8px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,.12);
-  }
-  .plate .flight {
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .02em;
-    color: rgba(255,255,255,.9);
-    text-shadow: 0 1px 2px rgba(0,0,0,.5);
-    line-height: 1.05;
+  .thrower .pad {
+    width: 56px; height: 16px; margin: 0 auto 6px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
   }
 
-  .mark .name {
+  section.card {
+    margin: 18px 0;
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  section.card h2 {
+    margin: 0 0 8px;
     font-size: 12px;
-    font-weight: 750;
-    letter-spacing: -.01em;
-    color: var(--text);
-    text-shadow: 0 1px 3px rgba(0,0,0,.65);
-  }
-  .mark .nums {
-    margin-top: 1px;
-    font-size: 10px;
-    font-weight: 650;
-    font-variant-numeric: tabular-nums;
-    color: var(--accent);
-    text-shadow: 0 1px 2px rgba(0,0,0,.55);
-  }
-
-  /* stability rim colors */
-  .mark.us .plate {
-    background: radial-gradient(circle at 35% 30%, #3d8f82, #14574d 70%);
-    border-color: rgba(110, 231, 208, .55);
-  }
-  .mark.str .plate {
-    background: radial-gradient(circle at 35% 30%, #8a7a45, #4a411f 70%);
-    border-color: rgba(240, 215, 140, .5);
-  }
-  .mark.os .plate {
-    background: radial-gradient(circle at 35% 30%, #a65d2e, #5a2f12 70%);
-    border-color: rgba(251, 146, 60, .55);
-  }
-  .mark.vos .plate {
-    background: radial-gradient(circle at 35% 30%, #a03a3a, #5a1717 70%);
-    border-color: rgba(248, 113, 113, .6);
-  }
-
-  /* soft empty grass hints — no boxes */
-  .gap {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1.5px dashed rgba(255,255,255,.12);
-    pointer-events: none;
-  }
-
-  .note {
-    max-width: 880px;
-    margin: 16px auto 36px;
-    padding: 0 20px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
     color: var(--muted);
-    font-size: 13px;
+  }
+  section.card p, section.card li {
+    color: var(--text);
+    font-size: 13.5px;
     line-height: 1.5;
   }
-  .note strong { color: #d7dee8; }
-  footer {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 0 20px 28px;
-    color: var(--faint);
-    font-size: 12px;
+  section.card ul { margin: 0; padding-left: 18px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .mute { color: var(--muted); }
+  table.dbg {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
   }
-
-  @media (max-width: 560px) {
-    .field { min-height: 560px; }
-    .mark { width: 78px; }
-    .plate { width: 46px; height: 46px; }
-    .mark .name { font-size: 11px; }
+  table.dbg th, table.dbg td {
+    text-align: left;
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--line);
   }
+  table.dbg th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  footer { padding: 8px 16px 32px; color: var(--faint); font-size: 12px; }
 </style>
 </head>
 <body>
 <header>
-  <div class="eyebrow">discwhich · field map</div>
-  <h1>Your bag on the fairway</h1>
+  <div class="eyebrow">discwhich · deterministic grid</div>
+  <h1>14 × 9 bag grid</h1>
   <p class="sub">
-    Overhead, behind you. <strong>Tee bottom-center.</strong> Farther = higher up the page.
-    <strong>RHBH:</strong> left = fade/OS · right = flip/US.
-    Putters nearest the tee — <strong>X3 left of Aviar</strong>.
+    Not hand-placed. Every disc goes through the same functions.<br/>
+    <code>row = clamp(round(speed), 1, 14)</code><br/>
+    <code>col = clamp(round((-turn) * 2 - fade), -4, +4)</code><br/>
+    Top of page = farther (speed 14). Bottom = tee / speed 1.
+    Left = OS/fade (−). Right = flip/US (+). Center column = 0.
   </p>
   <div class="meta">
-    <div class="chip">10 discs</div>
-    <div class="chip">no spreadsheet chrome</div>
+    <div class="chip"><strong>logic</strong> not guesses</div>
+    <div class="chip">TB3 → row <strong>8</strong>, col <strong>-2</strong></div>
+    <div class="chip">X3 col <strong>-3</strong> · Aviar col <strong>-1</strong> <span class="ok">X3 left ✓</span></div>
     <div class="chip"><a href="./">main prototype</a></div>
   </div>
 </header>
 
-<div class="stage">
-  <div class="field" role="img" aria-label="Overhead fairway with Lance bag discs. Thrower at bottom center. OS left, US right.">
-    <div class="haze"></div>
-    <div class="corridor"></div>
-    <div class="far">farther</div>
-    <div class="side left">fade · OS</div>
-    <div class="side right">flip · US</div>
-
-    <!-- empty shot whispers -->
-    <div class="gap" style="left:28%; top:62%;" title="mid US empty"></div>
-    <div class="gap" style="left:72%; top:48%;" title="fairway US empty"></div>
-    <div class="gap" style="left:50%; top:28%;" title="hybrid STR empty"></div>
-    <div class="gap" style="left:50%; top:12%;" title="distance empty"></div>
-
-    <!--
-      POSITION LAW (RHBH, behind thrower, looking upfield):
-        x: 0% left edge → 100% right edge
-           OS/VOS LEFT   |  STR center  |  US RIGHT
-        y: 0% far top → 100% near bottom
-           putters high-y (near tee), distance low-y
-
-      Stocks:
-        Aviar     2/3/0/1   STR putt
-        Aviar X3  3/2/0/3   OS approach  → LEFT of Aviar
-        Atlas     5/4/0/1   STR mid
-        Mako3     5/5/0/0   STR mid (longer)
-        TB3       8/4/0/2   STR fairway
-        Banshee   7/3/0/3   OS fairway
-        Firebird  9/3/0/4   VOS fairway
-        Orc      10/4/-1/3  OS hybrid
-        Mystere  11/6/-2/2  US hybrid
-        Archon   11/5/-2/2  US hybrid
-    -->
-
-    <!-- NEAR TEE (putt/approach) -->
-    <div class="mark os" style="left:38%; top:82%;">
-      <div class="plate"><div class="flight">OS</div></div>
-      <div class="name">Aviar X3</div>
-      <div class="nums">3/2/0/3</div>
-    </div>
-    <div class="mark str" style="left:50%; top:84%;">
-      <div class="plate"><div class="flight">STR</div></div>
-      <div class="name">Aviar</div>
-      <div class="nums">2/3/0/1</div>
-    </div>
-
-    <!-- MID -->
-    <div class="mark str" style="left:47%; top:68%;">
-      <div class="plate"><div class="flight">STR</div></div>
-      <div class="name">Atlas</div>
-      <div class="nums">5/4/0/1</div>
-    </div>
-    <div class="mark str" style="left:55%; top:64%;">
-      <div class="plate"><div class="flight">STR</div></div>
-      <div class="name">Mako3</div>
-      <div class="nums">5/5/0/0</div>
-    </div>
-
-    <!-- FAIRWAY -->
-    <div class="mark vos" style="left:18%; top:48%;">
-      <div class="plate"><div class="flight">VOS</div></div>
-      <div class="name">Firebird</div>
-      <div class="nums">9/3/0/4</div>
-    </div>
-    <div class="mark os" style="left:30%; top:50%;">
-      <div class="plate"><div class="flight">OS</div></div>
-      <div class="name">Banshee</div>
-      <div class="nums">7/3/0/3</div>
-    </div>
-    <div class="mark str" style="left:50%; top:52%;">
-      <div class="plate"><div class="flight">STR</div></div>
-      <div class="name">TB3</div>
-      <div class="nums">8/4/0/2</div>
-    </div>
-
-    <!-- HYBRID / CONTROL (deepest in this bag) -->
-    <div class="mark os" style="left:28%; top:32%;">
-      <div class="plate"><div class="flight">OS</div></div>
-      <div class="name">Orc</div>
-      <div class="nums">10/4/−1/3</div>
-    </div>
-    <div class="mark us" style="left:68%; top:30%;">
-      <div class="plate"><div class="flight">US</div></div>
-      <div class="name">Archon</div>
-      <div class="nums">11/5/−2/2</div>
-    </div>
-    <div class="mark us" style="left:78%; top:26%;">
-      <div class="plate"><div class="flight">US</div></div>
-      <div class="name">Mystere</div>
-      <div class="nums">11/6/−2/2</div>
-    </div>
-
-    <div class="tee" aria-hidden="true"></div>
+<main>
+  <div class="axis">
+    <span>← OS / fade (−4)</span>
+    <span>0 straight</span>
+    <span>flip / US (+4) →</span>
+  </div>
+  <div class="field-shell">
+    <table class="g" aria-label="14 by 9 disc bag grid">
+      <thead>
+        <tr>
+          <th class="corner" title="speed"></th>
+          <th class='colh'>-4</th><th class='colh'>-3</th><th class='colh'>-2</th><th class='colh'>-1</th><th class='colh zero'>0</th><th class='colh'>+1</th><th class='colh'>+2</th><th class='colh'>+3</th><th class='colh'>+4</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th class='rowh'><span>14</span></th><td class='cell empty' data-r='14' data-c='-4'></td><td class='cell empty' data-r='14' data-c='-3'></td><td class='cell empty' data-r='14' data-c='-2'></td><td class='cell empty' data-r='14' data-c='-1'></td><td class='cell empty' data-r='14' data-c='0'></td><td class='cell empty' data-r='14' data-c='1'></td><td class='cell empty' data-r='14' data-c='2'></td><td class='cell empty' data-r='14' data-c='3'></td><td class='cell empty' data-r='14' data-c='4'></td></tr><tr><th class='rowh'><span>13</span></th><td class='cell empty' data-r='13' data-c='-4'></td><td class='cell empty' data-r='13' data-c='-3'></td><td class='cell empty' data-r='13' data-c='-2'></td><td class='cell empty' data-r='13' data-c='-1'></td><td class='cell empty' data-r='13' data-c='0'></td><td class='cell empty' data-r='13' data-c='1'></td><td class='cell empty' data-r='13' data-c='2'></td><td class='cell empty' data-r='13' data-c='3'></td><td class='cell empty' data-r='13' data-c='4'></td></tr><tr><th class='rowh'><span>12</span></th><td class='cell empty' data-r='12' data-c='-4'></td><td class='cell empty' data-r='12' data-c='-3'></td><td class='cell empty' data-r='12' data-c='-2'></td><td class='cell empty' data-r='12' data-c='-1'></td><td class='cell empty' data-r='12' data-c='0'></td><td class='cell empty' data-r='12' data-c='1'></td><td class='cell empty' data-r='12' data-c='2'></td><td class='cell empty' data-r='12' data-c='3'></td><td class='cell empty' data-r='12' data-c='4'></td></tr><tr><th class='rowh'><span>11</span></th><td class='cell empty' data-r='11' data-c='-4'></td><td class='cell empty' data-r='11' data-c='-3'></td><td class='cell empty' data-r='11' data-c='-2'></td><td class='cell empty' data-r='11' data-c='-1'></td><td class='cell empty' data-r='11' data-c='0'></td><td class='cell empty' data-r='11' data-c='1'></td><td class='cell filled overlap' data-r='11' data-c='2'><div class='disc'><div class='name'>Archon</div><div class='nums'>11/5/-2/2</div></div><div class='disc'><div class='name'>Mystere</div><div class='nums'>11/6/-2/2</div></div></td><td class='cell empty' data-r='11' data-c='3'></td><td class='cell empty' data-r='11' data-c='4'></td></tr><tr><th class='rowh'><span>10</span></th><td class='cell empty' data-r='10' data-c='-4'></td><td class='cell empty' data-r='10' data-c='-3'></td><td class='cell empty' data-r='10' data-c='-2'></td><td class='cell filled' data-r='10' data-c='-1'><div class='disc'><div class='name'>Orc</div><div class='nums'>10/4/-1/3</div></div></td><td class='cell empty' data-r='10' data-c='0'></td><td class='cell empty' data-r='10' data-c='1'></td><td class='cell empty' data-r='10' data-c='2'></td><td class='cell empty' data-r='10' data-c='3'></td><td class='cell empty' data-r='10' data-c='4'></td></tr><tr><th class='rowh'><span>9</span></th><td class='cell filled' data-r='9' data-c='-4'><div class='disc'><div class='name'>Firebird</div><div class='nums'>9/3/0/4</div></div></td><td class='cell empty' data-r='9' data-c='-3'></td><td class='cell empty' data-r='9' data-c='-2'></td><td class='cell empty' data-r='9' data-c='-1'></td><td class='cell empty' data-r='9' data-c='0'></td><td class='cell empty' data-r='9' data-c='1'></td><td class='cell empty' data-r='9' data-c='2'></td><td class='cell empty' data-r='9' data-c='3'></td><td class='cell empty' data-r='9' data-c='4'></td></tr><tr><th class='rowh'><span>8</span></th><td class='cell empty' data-r='8' data-c='-4'></td><td class='cell empty' data-r='8' data-c='-3'></td><td class='cell filled' data-r='8' data-c='-2'><div class='disc'><div class='name'>TB3</div><div class='nums'>8/4/0/2</div></div></td><td class='cell empty' data-r='8' data-c='-1'></td><td class='cell empty' data-r='8' data-c='0'></td><td class='cell empty' data-r='8' data-c='1'></td><td class='cell empty' data-r='8' data-c='2'></td><td class='cell empty' data-r='8' data-c='3'></td><td class='cell empty' data-r='8' data-c='4'></td></tr><tr><th class='rowh'><span>7</span></th><td class='cell empty' data-r='7' data-c='-4'></td><td class='cell filled' data-r='7' data-c='-3'><div class='disc'><div class='name'>Banshee</div><div class='nums'>7/3/0/3</div></div></td><td class='cell empty' data-r='7' data-c='-2'></td><td class='cell empty' data-r='7' data-c='-1'></td><td class='cell empty' data-r='7' data-c='0'></td><td class='cell empty' data-r='7' data-c='1'></td><td class='cell empty' data-r='7' data-c='2'></td><td class='cell empty' data-r='7' data-c='3'></td><td class='cell empty' data-r='7' data-c='4'></td></tr><tr><th class='rowh'><span>6</span></th><td class='cell empty' data-r='6' data-c='-4'></td><td class='cell empty' data-r='6' data-c='-3'></td><td class='cell empty' data-r='6' data-c='-2'></td><td class='cell empty' data-r='6' data-c='-1'></td><td class='cell empty' data-r='6' data-c='0'></td><td class='cell empty' data-r='6' data-c='1'></td><td class='cell empty' data-r='6' data-c='2'></td><td class='cell empty' data-r='6' data-c='3'></td><td class='cell empty' data-r='6' data-c='4'></td></tr><tr><th class='rowh'><span>5</span></th><td class='cell empty' data-r='5' data-c='-4'></td><td class='cell empty' data-r='5' data-c='-3'></td><td class='cell empty' data-r='5' data-c='-2'></td><td class='cell filled' data-r='5' data-c='-1'><div class='disc'><div class='name'>Atlas</div><div class='nums'>5/4/0/1</div></div></td><td class='cell filled' data-r='5' data-c='0'><div class='disc'><div class='name'>Mako3</div><div class='nums'>5/5/0/0</div></div></td><td class='cell empty' data-r='5' data-c='1'></td><td class='cell empty' data-r='5' data-c='2'></td><td class='cell empty' data-r='5' data-c='3'></td><td class='cell empty' data-r='5' data-c='4'></td></tr><tr><th class='rowh'><span>4</span></th><td class='cell empty' data-r='4' data-c='-4'></td><td class='cell empty' data-r='4' data-c='-3'></td><td class='cell empty' data-r='4' data-c='-2'></td><td class='cell empty' data-r='4' data-c='-1'></td><td class='cell empty' data-r='4' data-c='0'></td><td class='cell empty' data-r='4' data-c='1'></td><td class='cell empty' data-r='4' data-c='2'></td><td class='cell empty' data-r='4' data-c='3'></td><td class='cell empty' data-r='4' data-c='4'></td></tr><tr><th class='rowh'><span>3</span></th><td class='cell empty' data-r='3' data-c='-4'></td><td class='cell filled' data-r='3' data-c='-3'><div class='disc'><div class='name'>Aviar X3</div><div class='nums'>3/2/0/3</div></div></td><td class='cell empty' data-r='3' data-c='-2'></td><td class='cell empty' data-r='3' data-c='-1'></td><td class='cell empty' data-r='3' data-c='0'></td><td class='cell empty' data-r='3' data-c='1'></td><td class='cell empty' data-r='3' data-c='2'></td><td class='cell empty' data-r='3' data-c='3'></td><td class='cell empty' data-r='3' data-c='4'></td></tr><tr><th class='rowh'><span>2</span></th><td class='cell empty' data-r='2' data-c='-4'></td><td class='cell empty' data-r='2' data-c='-3'></td><td class='cell empty' data-r='2' data-c='-2'></td><td class='cell filled' data-r='2' data-c='-1'><div class='disc'><div class='name'>Aviar</div><div class='nums'>2/3/0/1</div></div></td><td class='cell empty' data-r='2' data-c='0'></td><td class='cell empty' data-r='2' data-c='1'></td><td class='cell empty' data-r='2' data-c='2'></td><td class='cell empty' data-r='2' data-c='3'></td><td class='cell empty' data-r='2' data-c='4'></td></tr><tr><th class='rowh'><span>1</span></th><td class='cell empty' data-r='1' data-c='-4'></td><td class='cell empty' data-r='1' data-c='-3'></td><td class='cell empty' data-r='1' data-c='-2'></td><td class='cell empty' data-r='1' data-c='-1'></td><td class='cell empty' data-r='1' data-c='0'></td><td class='cell empty' data-r='1' data-c='1'></td><td class='cell empty' data-r='1' data-c='2'></td><td class='cell empty' data-r='1' data-c='3'></td><td class='cell empty' data-r='1' data-c='4'></td></tr>
+      </tbody>
+    </table>
     <div class="thrower">
-      <svg viewBox="0 0 44 52" aria-hidden="true">
-        <ellipse cx="22" cy="49" rx="11" ry="2.6" fill="rgba(0,0,0,.4)"/>
-        <circle cx="22" cy="10" r="5.2" fill="#d5dbe3"/>
-        <path d="M15 18c2.2-2.8 11.8-2.8 14 0l2.6 13.2c.35 1.8-1 2.7-2.3 2.2L27 28.5V42c0 1-.7 1.7-1.7 1.7h-6.6c-1 0-1.7-.7-1.7-1.7V28.5l-2.3 4.9c-1.3.5-2.65-.4-2.3-2.2L15 18z" fill="#b7c0cc"/>
-        <path d="M13 20c-3.8 1.8-6.5 1-7.4-1.1" stroke="#b7c0cc" stroke-width="2.1" stroke-linecap="round" fill="none"/>
-        <path d="M31 20c3.8 1.8 6.5 1 7.4-1.1" stroke="#b7c0cc" stroke-width="2.1" stroke-linecap="round" fill="none"/>
-        <circle cx="37.2" cy="16.2" r="2.7" fill="none" stroke="#6ee7d0" stroke-width="1.4"/>
-      </svg>
-      <span>you</span>
+      <div class="pad"></div>
+      you · tee · speed rises away from you
     </div>
   </div>
-</div>
 
-<p class="note">
-  <strong>Fix from last pass:</strong> L/R was backwards for RHBH. OS/fade is left, flip/US is right —
-  so <strong>Aviar X3 sits left of Aviar</strong>. Spreadsheet bands/cards stripped; this is landing spots on grass only.
-  Depth still from speed; left-right from turn/fade.
-</p>
+  <section class="card">
+    <h2>Is TB3 correct?</h2>
+    <p>
+      <strong>TB3 8/4/0/2</strong> →
+      row <strong class="mono">8</strong>,
+      col <strong class="mono">-2</strong>
+      (raw <span class="mono">-2</span>).
+    </p>
+    <p class="mute" style="margin-top:8px">
+      Speed 8 fairway row — correct class. Turn 0 / fade 2 is a mild OS workhorse, so it sits
+      one step left of center (−2), not on 0. That is what the formula says; if you want TeeBird-class
+      on 0, we change the formula (e.g. fade weight), not the TB3 coordinates by hand.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Plug-in contract for discwhich</h2>
+    <ul>
+      <li><strong>Input:</strong> speed, glide, turn, fade (glide unused for cell id v1)</li>
+      <li><strong>Output:</strong> <span class="mono">{ row: 1..14, col: -4..+4 }</span></li>
+      <li><strong>No</strong> mold-name special cases in placement</li>
+      <li>Path drawing = separate algorithm; does not assign cells</li>
+      <li>Source: <span class="mono">build_bag_grid.py</span> → regenerate this page</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Placement log (all discs)</h2>
+    <table class="dbg">
+      <thead>
+        <tr>
+          <th>Disc</th><th>Numbers</th><th>Row</th><th>Col</th><th>Raw col</th><th>Carry</th><th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Archon</td><td class='mono'>11/5/-2/2</td><td class='mono'>11</td><td class='mono'>+2</td><td class='mono'>2</td><td>long</td><td class='mute'></td></tr><tr><td>Mystere</td><td class='mono'>11/6/-2/2</td><td class='mono'>11</td><td class='mono'>+2</td><td class='mono'>2</td><td>long</td><td class='mute'></td></tr><tr><td>Orc</td><td class='mono'>10/4/-1/3</td><td class='mono'>10</td><td class='mono'>-1</td><td class='mono'>-1</td><td>normal</td><td class='mute'></td></tr><tr><td>Firebird</td><td class='mono'>9/3/0/4</td><td class='mono'>9</td><td class='mono'>-4</td><td class='mono'>-4</td><td>normal</td><td class='mute'></td></tr><tr><td>TB3</td><td class='mono'>8/4/0/2</td><td class='mono'>8</td><td class='mono'>-2</td><td class='mono'>-2</td><td>normal</td><td class='mute'></td></tr><tr><td>Banshee</td><td class='mono'>7/3/0/3</td><td class='mono'>7</td><td class='mono'>-3</td><td class='mono'>-3</td><td>normal</td><td class='mute'></td></tr><tr><td>Atlas</td><td class='mono'>5/4/0/1</td><td class='mono'>5</td><td class='mono'>-1</td><td class='mono'>-1</td><td>normal</td><td class='mute'></td></tr><tr><td>Mako3</td><td class='mono'>5/5/0/0</td><td class='mono'>5</td><td class='mono'>+0</td><td class='mono'>0</td><td>long</td><td class='mute'></td></tr><tr><td>Aviar X3</td><td class='mono'>3/2/0/3</td><td class='mono'>3</td><td class='mono'>-3</td><td class='mono'>-3</td><td>short</td><td class='mute'></td></tr><tr><td>Aviar</td><td class='mono'>2/3/0/1</td><td class='mono'>2</td><td class='mono'>-1</td><td class='mono'>-1</td><td>normal</td><td class='mute'>putter proxy</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
 
 <footer>
-  discwhich · field map · <a href="https://github.com/thecooperativeagency/whichdisc">repo</a>
+  Generated by build_bag_grid.py · discwhich · not hand-placed
 </footer>
 </body>
 </html>
