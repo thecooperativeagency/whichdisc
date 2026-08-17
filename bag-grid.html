@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>discwhich — Lance bag grid (trial)</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #141b24;
+    --panel2: #1a2330;
+    --line: #243041;
+    --line2: #2f3d52;
+    --text: #eef2f7;
+    --muted: #8b95a8;
+    --faint: #5c677a;
+    --accent: #5eead4;
+    --us: #2a9d8f;
+    --str: #e9c46a;
+    --os: #e85d04;
+    --vos: #c1121f;
+    --overlap: #f87171;
+    --empty: #0f1520;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header {
+    padding: 22px 24px 8px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 8px 0 6px;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 62ch;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .chip {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+  .chip strong { color: var(--text); font-weight: 600; }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 12px 24px 48px;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin: 8px 0 18px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: -1px;
+  }
+  .grid-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #121922 0%, #0d1219 100%);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  }
+  table.bag {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 820px;
+  }
+  table.bag th, table.bag td {
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.bag th:last-child, table.bag td:last-child { border-right: 0; }
+  table.bag tr:last-child td { border-bottom: 0; }
+  table.bag thead th {
+    background: #101820;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  table.bag thead th .col-name { display: block; color: var(--text); font-size: 13px; letter-spacing: 0.04em; margin-bottom: 2px; }
+  table.bag thead th.us .col-name { color: #5eead4; }
+  table.bag thead th.str .col-name { color: #f0d78c; }
+  table.bag thead th.os .col-name { color: #ff9f4a; }
+  table.bag thead th.vos .col-name { color: #ff6b6b; }
+  table.bag tbody th.row-h {
+    width: 128px;
+    background: #101820;
+    text-align: left;
+    padding: 14px 12px;
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 700;
+  }
+  table.bag tbody th.row-h span {
+    display: block;
+    color: var(--faint);
+    font-weight: 500;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  td.cell {
+    padding: 10px;
+    min-height: 110px;
+    height: 118px;
+    background: var(--empty);
+  }
+  td.cell.filled {
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(94,234,212,0.05), transparent 55%),
+      var(--panel);
+  }
+  td.cell.overlap {
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(248,113,113,0.08), transparent 55%),
+      #1a1520;
+  }
+  td.cell.empty-mark {
+    background-image:
+      linear-gradient(45deg, transparent 46%, rgba(36,48,65,0.55) 49%, rgba(36,48,65,0.55) 51%, transparent 54%);
+  }
+  .empty-label {
+    color: var(--faint);
+    font-size: 11px;
+    text-align: center;
+    padding-top: 34px;
+    letter-spacing: 0.04em;
+  }
+  .disc {
+    border: 1px solid var(--line2);
+    background: var(--panel2);
+    border-radius: 12px;
+    padding: 10px 10px 9px;
+    margin-bottom: 8px;
+  }
+  .disc:last-child { margin-bottom: 0; }
+  .disc.dup {
+    border-color: rgba(248,113,113,0.45);
+  }
+  .disc-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .disc-name {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .disc-nums {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .disc-meta {
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    padding: 2px 7px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .dot.us { background: var(--us); }
+  .dot.str { background: var(--str); }
+  .dot.os { background: var(--os); }
+  .dot.vos { background: var(--vos); }
+  section.notes {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .card h2 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .card ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .card li { margin: 4px 0; }
+  .card .muted { color: var(--muted); }
+  footer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 36px;
+    color: var(--faint);
+    font-size: 12px;
+  }
+  .path-note {
+    margin-top: 18px;
+    border: 1px dashed var(--line2);
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">discwhich · trial</div>
+  <h1>Lance bag — shot grid</h1>
+  <p class="sub">
+    Prototype placement only. <strong>Row = speed</strong> · <strong>Column = turn + fade</strong> ·
+    glide is carry tag (short / normal / long). Path engine is separate — not used to place cells.
+  </p>
+  <div class="meta">
+    <div class="chip"><strong>10</strong> discs</div>
+    <div class="chip"><strong>8</strong> filled cells</div>
+    <div class="chip"><strong>2</strong> overlaps</div>
+    <div class="chip">Aviar numbers = <strong>Aviar P&amp;A</strong> stock</div>
+    <div class="chip"><a href="./">← main prototype</a></div>
+  </div>
+</header>
+<main>
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--us)"></i>US — flip / right then left</span>
+    <span><i class="swatch" style="background:var(--str)"></i>STR — workhorse straight</span>
+    <span><i class="swatch" style="background:var(--os)"></i>OS — reliable left finish</span>
+    <span><i class="swatch" style="background:var(--vos)"></i>VOS — beef / wind</span>
+    <span><i class="swatch" style="background:var(--overlap)"></i>overlap cell</span>
+  </div>
+
+  <div class="grid-wrap">
+    <table class="bag" aria-label="Lance disc bag shot grid">
+      <thead>
+        <tr>
+          <th style="width:128px; text-align:left; padding-left:14px;">Speed class</th>
+          <th class="us"><span class="col-name">US</span>turn / flip</th>
+          <th class="str"><span class="col-name">STR</span>neutral</th>
+          <th class="os"><span class="col-name">OS</span>stable</th>
+          <th class="vos"><span class="col-name">VOS</span>overstable</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Putt/Approach -->
+        <tr>
+          <th class="row-h">Putt / Approach<span>speed 1–3</span></th>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell filled">
+            <div class="disc">
+              <div class="disc-top">
+                <div class="disc-name">Aviar</div>
+                <div class="disc-nums">2/3/0/1</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot str"></i>STR</span>
+                <span class="pill">carry normal</span>
+                <span class="pill">Aviar P&amp;A</span>
+              </div>
+            </div>
+          </td>
+          <td class="cell filled">
+            <div class="disc">
+              <div class="disc-top">
+                <div class="disc-name">Aviar X3</div>
+                <div class="disc-nums">3/2/0/3</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot os"></i>OS</span>
+                <span class="pill">carry short</span>
+              </div>
+            </div>
+          </td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+        </tr>
+
+        <!-- Mid -->
+        <tr>
+          <th class="row-h">Mid<span>speed 4–5</span></th>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell filled overlap">
+            <div class="disc dup">
+              <div class="disc-top">
+                <div class="disc-name">Atlas</div>
+                <div class="disc-nums">5/4/0/1</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot str"></i>STR</span>
+                <span class="pill">carry normal</span>
+                <span class="pill">overlap</span>
+              </div>
+            </div>
+            <div class="disc dup">
+              <div class="disc-top">
+                <div class="disc-name">Mako3</div>
+                <div class="disc-nums">5/5/0/0</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot str"></i>STR</span>
+                <span class="pill">carry long</span>
+                <span class="pill">overlap</span>
+              </div>
+            </div>
+          </td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+        </tr>
+
+        <!-- Fairway -->
+        <tr>
+          <th class="row-h">Fairway<span>speed 6–9</span></th>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell filled">
+            <div class="disc">
+              <div class="disc-top">
+                <div class="disc-name">TB3</div>
+                <div class="disc-nums">8/4/0/2</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot str"></i>STR</span>
+                <span class="pill">carry normal</span>
+                <span class="pill">Teebird3</span>
+              </div>
+            </div>
+          </td>
+          <td class="cell filled">
+            <div class="disc">
+              <div class="disc-top">
+                <div class="disc-name">Banshee</div>
+                <div class="disc-nums">7/3/0/3</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot os"></i>OS</span>
+                <span class="pill">carry normal</span>
+              </div>
+            </div>
+          </td>
+          <td class="cell filled">
+            <div class="disc">
+              <div class="disc-top">
+                <div class="disc-name">Firebird</div>
+                <div class="disc-nums">9/3/0/4</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot vos"></i>VOS</span>
+                <span class="pill">carry normal</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Control/Hybrid -->
+        <tr>
+          <th class="row-h">Control / Hybrid<span>speed 10–11</span></th>
+          <td class="cell filled overlap">
+            <div class="disc dup">
+              <div class="disc-top">
+                <div class="disc-name">Mystere</div>
+                <div class="disc-nums">11/6/−2/2</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot us"></i>US</span>
+                <span class="pill">carry long</span>
+                <span class="pill">overlap</span>
+              </div>
+            </div>
+            <div class="disc dup">
+              <div class="disc-top">
+                <div class="disc-name">Archon</div>
+                <div class="disc-nums">11/5/−2/2</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot us"></i>US</span>
+                <span class="pill">carry long</span>
+                <span class="pill">overlap</span>
+              </div>
+            </div>
+          </td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell filled">
+            <div class="disc">
+              <div class="disc-top">
+                <div class="disc-name">Orc</div>
+                <div class="disc-nums">10/4/−1/3</div>
+              </div>
+              <div class="disc-meta">
+                <span class="pill"><i class="dot os"></i>OS</span>
+                <span class="pill">carry normal</span>
+              </div>
+            </div>
+          </td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+        </tr>
+
+        <!-- Distance -->
+        <tr>
+          <th class="row-h">Distance<span>speed 12–14</span></th>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+          <td class="cell empty-mark"><div class="empty-label">empty</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="notes">
+    <div class="card">
+      <h2>Placement rules</h2>
+      <ul>
+        <li><strong>Row</strong> from speed only (glide → carry tag)</li>
+        <li><strong>Col</strong> from turn + fade (fade-aware, not turn+fade sum)</li>
+        <li>VOS if fade ≥ 3.5 and turn ≥ −0.5</li>
+        <li>OS if fade ≥ 3 and turn ≥ −1 and stab ≥ 1.5</li>
+        <li>US if turn ≤ −2, or turn ≤ −1 with fade ≤ 1</li>
+        <li>else STR</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>What the grid says</h2>
+      <ul>
+        <li>OS ladder is clean: X3 → Banshee → Orc → Firebird</li>
+        <li>Mid STR stacked: Atlas + Mako3</li>
+        <li>Flip-D stacked: Mystere + Archon (same cell by design)</li>
+        <li>No speed-12+ Distance row — max D sits Hybrid 10–11</li>
+        <li class="muted">Empty that matter later: Mid US, Fairway US, Hybrid STR</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Not on this page yet</h2>
+      <ul>
+        <li>Flight-line plate (separate algorithm)</li>
+        <li>Field-map landing zones</li>
+        <li>Plastic / beat-in offsets</li>
+        <li>Arm-speed scaling</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="path-note">
+    <strong style="color:var(--text)">Trial build.</strong>
+    Grid algorithm only — numbers → cell. Next visual pass can add path thumbnails per disc without changing placement.
+  </div>
+</main>
+<footer>
+  discwhich bag-grid trial · tee/path orientation not used here ·
+  <a href="https://github.com/thecooperativeagency/whichdisc">repo</a>
+</footer>
+</body>
+</html>
