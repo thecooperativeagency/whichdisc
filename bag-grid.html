@@ -2,279 +2,468 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>discwhich — 14×9 bag grid</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#0b0f14"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>discwhich — bag field</title>
 <style>
   :root {
     --bg: #0b0f14;
-    --panel: #121a22;
-    --line: #243041;
-    --text: #eef2f7;
-    --muted: #8b95a8;
-    --faint: #5c677a;
+    --text: #f2f5f8;
+    --muted: #9aa3b2;
+    --faint: #6a7382;
     --accent: #5eead4;
-    --os: #fb923c;
-    --us: #2dd4bf;
-    --zero: #f0d78c;
-    --fill: #1a2733;
-    --overlap: #3a1d24;
+    --line: rgba(255,255,255,.08);
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
   body {
-    margin: 0;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    min-height: 100dvh;
+    padding: calc(12px + var(--safe-t)) calc(12px + var(--safe-r)) calc(16px + var(--safe-b)) calc(12px + var(--safe-l));
   }
   a { color: var(--accent); text-decoration: none; }
-  header, main, footer { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
-  header { padding-top: 20px; }
-  .eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-  h1 { margin: 6px 0; font-size: 24px; letter-spacing: -.02em; }
-  .sub { color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 70ch; }
-  .sub code { color: #d9e2ec; font-size: 12.5px; }
-  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
-  .chip { border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 12px; padding: 5px 10px; border-radius: 999px; }
-  .chip strong { color: var(--text); }
-  .ok { color: #6ee7b7; }
-  .warn { color: #fbbf24; }
 
-  .field-shell {
-    margin: 14px 0 8px;
-    border: 1px solid #1e3a28;
-    border-radius: 16px;
-    overflow: auto;
-    background:
-      linear-gradient(180deg, rgba(12,28,18,.55), rgba(10,16,12,.92)),
-      repeating-linear-gradient(90deg, #12301c 0 36px, #102b19 36px 72px);
-    box-shadow: 0 18px 50px rgba(0,0,0,.4);
+  .top {
+    max-width: 480px;
+    margin: 0 auto 10px;
   }
-  table.g {
-    width: 100%;
-    min-width: 860px;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
-  .corner {
-    width: 44px;
-    background: rgba(0,0,0,.35);
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    border-right: 1px solid rgba(255,255,255,.08);
-  }
-  th.colh {
-    position: sticky; top: 0;
-    z-index: 2;
-    background: rgba(8,14,12,.92);
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 750;
-    padding: 10px 4px;
-    border-bottom: 1px solid rgba(255,255,255,.1);
-    text-align: center;
-  }
-  th.colh.zero { color: var(--zero); }
-  th.rowh {
-    width: 44px;
-    background: rgba(8,14,12,.75);
-    color: var(--faint);
-    font-size: 11px;
-    font-weight: 700;
-    text-align: center;
-    border-right: 1px solid rgba(255,255,255,.08);
-    border-bottom: 1px solid rgba(255,255,255,.05);
-  }
-  th.rowh span {
-    display: inline-block;
-    min-width: 1.2em;
-  }
-  td.cell {
-    height: 52px;
-    border-right: 1px solid rgba(255,255,255,.045);
-    border-bottom: 1px solid rgba(255,255,255,.045);
-    vertical-align: middle;
-    padding: 3px;
-    text-align: center;
-  }
-  /* center column emphasis */
-  td.cell[data-c="0"], th.colh.zero {
-    box-shadow: inset 0 0 0 1px rgba(240,215,140,.08);
-  }
-  td.cell.empty { background: transparent; }
-  td.cell.filled {
-    background: rgba(20, 36, 28, .88);
-  }
-  td.cell.overlap {
-    background: var(--overlap);
-  }
-  .disc {
-    display: inline-block;
-    min-width: 72px;
-    margin: 1px;
-    padding: 4px 6px 3px;
-    border-radius: 8px;
-    background: rgba(0,0,0,.35);
-    border: 1px solid rgba(255,255,255,.12);
-  }
-  .disc .name {
-    font-size: 11px;
-    font-weight: 750;
-    line-height: 1.15;
-  }
-  .disc .nums {
-    font-size: 10px;
-    font-weight: 650;
+  .eyebrow {
     color: var(--accent);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .axis {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 48px 0 52px;
-    color: rgba(238,242,247,.35);
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: .12em;
     text-transform: uppercase;
   }
-  .thrower {
-    text-align: center;
-    padding: 10px 0 14px;
-    color: rgba(238,242,247,.5);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .14em;
-    text-transform: uppercase;
+  h1 {
+    margin: 4px 0 4px;
+    font-size: 1.35rem;
+    letter-spacing: -.02em;
+    line-height: 1.15;
   }
-  .thrower .pad {
-    width: 56px; height: 16px; margin: 0 auto 6px;
-    border-radius: 6px;
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.14);
+  .sub {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .chip {
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid #243041;
+    background: #121820;
+    border-radius: 999px;
+    padding: 5px 9px;
+  }
+  .chip b { color: var(--text); font-weight: 700; }
+
+  /* ===== PHONE FIELD ===== */
+  .stage {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .axis-x {
+    display: grid;
+    grid-template-columns: 18px 1fr 18px;
+    gap: 0;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 0 2px;
+  }
+  .axis-x .mid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    text-align: center;
+    font-size: 10px;
+    font-weight: 750;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .axis-x .mid span.z { color: #f0d78c; }
+  .axis-x .end {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: rgba(242,245,248,.28);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .axis-x .end.r { transform: none; }
+
+  .field-wrap {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #1c3a27;
+    box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    background:
+      radial-gradient(ellipse 90% 40% at 50% 100%, rgba(0,0,0,.4), transparent 70%),
+      radial-gradient(ellipse 80% 30% at 50% 0%, rgba(255,255,255,.04), transparent 60%),
+      repeating-linear-gradient(90deg, #14351f 0 28px, #12311c 28px 56px),
+      #12301c;
   }
 
-  section.card {
-    margin: 18px 0;
-    padding: 14px 16px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 14px;
+  /* 9 cols × 14 speed rows + tee band */
+  .field {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    grid-template-rows: repeat(14, minmax(0, 1fr));
+    /* phone-first height: tall enough to separate speeds, still one screen-ish */
+    height: min(72dvh, 640px);
+    min-height: 520px;
+    width: 100%;
+    position: relative;
+    padding: 8px 4px 0;
   }
-  section.card h2 {
-    margin: 0 0 8px;
-    font-size: 12px;
-    letter-spacing: .08em;
+
+  /* center corridor */
+  .field::before {
+    content: "";
+    position: absolute;
+    left: calc(50% - 0.5px);
+    top: 6px;
+    bottom: 52px;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(240,215,140,.22), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* faint row lines every speed */
+  .gridlines {
+    position: absolute;
+    inset: 8px 0 52px 0;
+    display: grid;
+    grid-template-rows: repeat(14, 1fr);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .gridlines i {
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+
+  .spd-rail {
+    position: absolute;
+    right: 4px;
+    top: 8px;
+    bottom: 52px;
+    width: 16px;
+    display: grid;
+    grid-template-rows: repeat(14, 1fr);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .spd {
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(242,245,248,.28);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .far-tag {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .14em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: rgba(242,245,248,.22);
+    z-index: 1;
+    pointer-events: none;
   }
-  section.card p, section.card li {
+
+  /* disc marks */
+  .mark {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    /* stack shared cells */
+    transform: translateY(calc(var(--stack, 0) * -10px)) translateX(calc(var(--stack, 0) * 6px));
+    cursor: pointer;
+  }
+  .mark .dot {
+    width: clamp(22px, 7.2vw, 30px);
+    height: clamp(22px, 7.2vw, 30px);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.28);
+    box-shadow:
+      0 6px 14px rgba(0,0,0,.4),
+      inset 0 1px 0 rgba(255,255,255,.2);
+  }
+  .mark .label {
+    margin-top: 3px;
+    text-align: center;
+    line-height: 1.05;
+    max-width: 100%;
+    padding: 0 1px;
+  }
+  .mark .name {
+    display: block;
+    font-size: clamp(9px, 2.7vw, 11px);
+    font-weight: 800;
+    letter-spacing: -.01em;
     color: var(--text);
-    font-size: 13.5px;
-    line-height: 1.5;
+    text-shadow: 0 1px 3px rgba(0,0,0,.75);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 4.8rem;
   }
-  section.card ul { margin: 0; padding-left: 18px; }
-  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-  .mute { color: var(--muted); }
+  .mark .nums {
+    display: block;
+    font-size: clamp(8px, 2.3vw, 10px);
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 2px rgba(0,0,0,.7);
+  }
+
+  .mark.vos .dot { background: radial-gradient(circle at 35% 30%, #c45a5a, #6b1d1d); border-color: rgba(248,113,113,.65); }
+  .mark.os .dot { background: radial-gradient(circle at 35% 30%, #d4894a, #6b3a14); border-color: rgba(251,146,60,.6); }
+  .mark.str .dot { background: radial-gradient(circle at 35% 30%, #c6b56a, #5c5224); border-color: rgba(240,215,140,.55); }
+  .mark.soft-us .dot { background: radial-gradient(circle at 35% 30%, #4fae9e, #1a5c52); border-color: rgba(45,212,191,.5); }
+  .mark.us .dot { background: radial-gradient(circle at 35% 30%, #3dcfb8, #0f5c50); border-color: rgba(94,234,212,.65); }
+
+  .mark:active .dot, .mark:focus-visible .dot {
+    transform: scale(1.08);
+    outline: none;
+  }
+  .mark:focus-visible { outline: none; }
+  .mark.is-active { z-index: 5; }
+  .mark.is-active .dot {
+    box-shadow: 0 0 0 3px rgba(94,234,212,.35), 0 8px 18px rgba(0,0,0,.45);
+  }
+
+  /* tee band */
+  .tee {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 8px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.35));
+    border-top: 1px solid rgba(255,255,255,.06);
+    z-index: 3;
+    pointer-events: none;
+  }
+  .tee .pad {
+    width: 52px;
+    height: 14px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.16);
+    margin-bottom: 4px;
+  }
+  .tee .you {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(242,245,248,.45);
+  }
+
+  /* selected sheet */
+  .sheet {
+    max-width: 480px;
+    margin: 12px auto 0;
+    border: 1px solid #243041;
+    background: #121820;
+    border-radius: 14px;
+    padding: 12px 14px;
+    min-height: 72px;
+  }
+  .sheet .hint {
+    color: var(--faint);
+    font-size: 12px;
+  }
+  .sheet .title {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+  }
+  .sheet .meta {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .sheet .meta b { color: var(--text); }
+  .sheet .nums {
+    color: var(--accent);
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+  }
+
+  details.log {
+    max-width: 480px;
+    margin: 14px auto 0;
+    border: 1px solid #243041;
+    background: #10161d;
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+  details.log summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 750;
+    color: var(--muted);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    list-style: none;
+  }
+  details.log summary::-webkit-details-marker { display: none; }
   table.dbg {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    margin-top: 10px;
+    font-size: 12px;
   }
   table.dbg th, table.dbg td {
     text-align: left;
-    padding: 7px 8px;
-    border-bottom: 1px solid var(--line);
+    padding: 6px 4px;
+    border-bottom: 1px solid #243041;
   }
-  table.dbg th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
-  footer { padding: 8px 16px 32px; color: var(--faint); font-size: 12px; }
+  table.dbg th {
+    color: var(--faint);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+
+  .foot {
+    max-width: 480px;
+    margin: 14px auto 0;
+    color: var(--faint);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* wider phones / desktop: roomier field */
+  @media (min-width: 520px) {
+    .top, .stage, .sheet, details.log, .foot { max-width: 560px; }
+    .field { height: min(75dvh, 720px); min-height: 600px; }
+    .mark .name { max-width: 5.5rem; font-size: 12px; }
+    .mark .nums { font-size: 11px; }
+    .mark .dot { width: 32px; height: 32px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="eyebrow">discwhich · deterministic grid</div>
-  <h1>14 × 9 bag grid</h1>
-  <p class="sub">
-    Not hand-placed. Every disc goes through the same functions.<br/>
-    <code>row = clamp(round(speed), 1, 14)</code><br/>
-    <code>col = clamp(round((-turn) * 2 - fade), -4, +4)</code><br/>
-    Top of page = farther (speed 14). Bottom = tee / speed 1.
-    Left = OS/fade (−). Right = flip/US (+). Center column = 0.
-  </p>
-  <div class="meta">
-    <div class="chip"><strong>logic</strong> not guesses</div>
-    <div class="chip">TB3 → row <strong>8</strong>, col <strong>-2</strong></div>
-    <div class="chip">X3 col <strong>-3</strong> · Aviar col <strong>-1</strong> <span class="ok">X3 left ✓</span></div>
-    <div class="chip"><a href="./">main prototype</a></div>
-  </div>
-</header>
-
-<main>
-  <div class="axis">
-    <span>← OS / fade (−4)</span>
-    <span>0 straight</span>
-    <span>flip / US (+4) →</span>
-  </div>
-  <div class="field-shell">
-    <table class="g" aria-label="14 by 9 disc bag grid">
-      <thead>
-        <tr>
-          <th class="corner" title="speed"></th>
-          <th class='colh'>-4</th><th class='colh'>-3</th><th class='colh'>-2</th><th class='colh'>-1</th><th class='colh zero'>0</th><th class='colh'>+1</th><th class='colh'>+2</th><th class='colh'>+3</th><th class='colh'>+4</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><th class='rowh'><span>14</span></th><td class='cell empty' data-r='14' data-c='-4'></td><td class='cell empty' data-r='14' data-c='-3'></td><td class='cell empty' data-r='14' data-c='-2'></td><td class='cell empty' data-r='14' data-c='-1'></td><td class='cell empty' data-r='14' data-c='0'></td><td class='cell empty' data-r='14' data-c='1'></td><td class='cell empty' data-r='14' data-c='2'></td><td class='cell empty' data-r='14' data-c='3'></td><td class='cell empty' data-r='14' data-c='4'></td></tr><tr><th class='rowh'><span>13</span></th><td class='cell empty' data-r='13' data-c='-4'></td><td class='cell empty' data-r='13' data-c='-3'></td><td class='cell empty' data-r='13' data-c='-2'></td><td class='cell empty' data-r='13' data-c='-1'></td><td class='cell empty' data-r='13' data-c='0'></td><td class='cell empty' data-r='13' data-c='1'></td><td class='cell empty' data-r='13' data-c='2'></td><td class='cell empty' data-r='13' data-c='3'></td><td class='cell empty' data-r='13' data-c='4'></td></tr><tr><th class='rowh'><span>12</span></th><td class='cell empty' data-r='12' data-c='-4'></td><td class='cell empty' data-r='12' data-c='-3'></td><td class='cell empty' data-r='12' data-c='-2'></td><td class='cell empty' data-r='12' data-c='-1'></td><td class='cell empty' data-r='12' data-c='0'></td><td class='cell empty' data-r='12' data-c='1'></td><td class='cell empty' data-r='12' data-c='2'></td><td class='cell empty' data-r='12' data-c='3'></td><td class='cell empty' data-r='12' data-c='4'></td></tr><tr><th class='rowh'><span>11</span></th><td class='cell empty' data-r='11' data-c='-4'></td><td class='cell empty' data-r='11' data-c='-3'></td><td class='cell empty' data-r='11' data-c='-2'></td><td class='cell empty' data-r='11' data-c='-1'></td><td class='cell empty' data-r='11' data-c='0'></td><td class='cell empty' data-r='11' data-c='1'></td><td class='cell filled overlap' data-r='11' data-c='2'><div class='disc'><div class='name'>Archon</div><div class='nums'>11/5/-2/2</div></div><div class='disc'><div class='name'>Mystere</div><div class='nums'>11/6/-2/2</div></div></td><td class='cell empty' data-r='11' data-c='3'></td><td class='cell empty' data-r='11' data-c='4'></td></tr><tr><th class='rowh'><span>10</span></th><td class='cell empty' data-r='10' data-c='-4'></td><td class='cell empty' data-r='10' data-c='-3'></td><td class='cell empty' data-r='10' data-c='-2'></td><td class='cell filled' data-r='10' data-c='-1'><div class='disc'><div class='name'>Orc</div><div class='nums'>10/4/-1/3</div></div></td><td class='cell empty' data-r='10' data-c='0'></td><td class='cell empty' data-r='10' data-c='1'></td><td class='cell empty' data-r='10' data-c='2'></td><td class='cell empty' data-r='10' data-c='3'></td><td class='cell empty' data-r='10' data-c='4'></td></tr><tr><th class='rowh'><span>9</span></th><td class='cell filled' data-r='9' data-c='-4'><div class='disc'><div class='name'>Firebird</div><div class='nums'>9/3/0/4</div></div></td><td class='cell empty' data-r='9' data-c='-3'></td><td class='cell empty' data-r='9' data-c='-2'></td><td class='cell empty' data-r='9' data-c='-1'></td><td class='cell empty' data-r='9' data-c='0'></td><td class='cell empty' data-r='9' data-c='1'></td><td class='cell empty' data-r='9' data-c='2'></td><td class='cell empty' data-r='9' data-c='3'></td><td class='cell empty' data-r='9' data-c='4'></td></tr><tr><th class='rowh'><span>8</span></th><td class='cell empty' data-r='8' data-c='-4'></td><td class='cell empty' data-r='8' data-c='-3'></td><td class='cell filled' data-r='8' data-c='-2'><div class='disc'><div class='name'>TB3</div><div class='nums'>8/4/0/2</div></div></td><td class='cell empty' data-r='8' data-c='-1'></td><td class='cell empty' data-r='8' data-c='0'></td><td class='cell empty' data-r='8' data-c='1'></td><td class='cell empty' data-r='8' data-c='2'></td><td class='cell empty' data-r='8' data-c='3'></td><td class='cell empty' data-r='8' data-c='4'></td></tr><tr><th class='rowh'><span>7</span></th><td class='cell empty' data-r='7' data-c='-4'></td><td class='cell filled' data-r='7' data-c='-3'><div class='disc'><div class='name'>Banshee</div><div class='nums'>7/3/0/3</div></div></td><td class='cell empty' data-r='7' data-c='-2'></td><td class='cell empty' data-r='7' data-c='-1'></td><td class='cell empty' data-r='7' data-c='0'></td><td class='cell empty' data-r='7' data-c='1'></td><td class='cell empty' data-r='7' data-c='2'></td><td class='cell empty' data-r='7' data-c='3'></td><td class='cell empty' data-r='7' data-c='4'></td></tr><tr><th class='rowh'><span>6</span></th><td class='cell empty' data-r='6' data-c='-4'></td><td class='cell empty' data-r='6' data-c='-3'></td><td class='cell empty' data-r='6' data-c='-2'></td><td class='cell empty' data-r='6' data-c='-1'></td><td class='cell empty' data-r='6' data-c='0'></td><td class='cell empty' data-r='6' data-c='1'></td><td class='cell empty' data-r='6' data-c='2'></td><td class='cell empty' data-r='6' data-c='3'></td><td class='cell empty' data-r='6' data-c='4'></td></tr><tr><th class='rowh'><span>5</span></th><td class='cell empty' data-r='5' data-c='-4'></td><td class='cell empty' data-r='5' data-c='-3'></td><td class='cell empty' data-r='5' data-c='-2'></td><td class='cell filled' data-r='5' data-c='-1'><div class='disc'><div class='name'>Atlas</div><div class='nums'>5/4/0/1</div></div></td><td class='cell filled' data-r='5' data-c='0'><div class='disc'><div class='name'>Mako3</div><div class='nums'>5/5/0/0</div></div></td><td class='cell empty' data-r='5' data-c='1'></td><td class='cell empty' data-r='5' data-c='2'></td><td class='cell empty' data-r='5' data-c='3'></td><td class='cell empty' data-r='5' data-c='4'></td></tr><tr><th class='rowh'><span>4</span></th><td class='cell empty' data-r='4' data-c='-4'></td><td class='cell empty' data-r='4' data-c='-3'></td><td class='cell empty' data-r='4' data-c='-2'></td><td class='cell empty' data-r='4' data-c='-1'></td><td class='cell empty' data-r='4' data-c='0'></td><td class='cell empty' data-r='4' data-c='1'></td><td class='cell empty' data-r='4' data-c='2'></td><td class='cell empty' data-r='4' data-c='3'></td><td class='cell empty' data-r='4' data-c='4'></td></tr><tr><th class='rowh'><span>3</span></th><td class='cell empty' data-r='3' data-c='-4'></td><td class='cell filled' data-r='3' data-c='-3'><div class='disc'><div class='name'>Aviar X3</div><div class='nums'>3/2/0/3</div></div></td><td class='cell empty' data-r='3' data-c='-2'></td><td class='cell empty' data-r='3' data-c='-1'></td><td class='cell empty' data-r='3' data-c='0'></td><td class='cell empty' data-r='3' data-c='1'></td><td class='cell empty' data-r='3' data-c='2'></td><td class='cell empty' data-r='3' data-c='3'></td><td class='cell empty' data-r='3' data-c='4'></td></tr><tr><th class='rowh'><span>2</span></th><td class='cell empty' data-r='2' data-c='-4'></td><td class='cell empty' data-r='2' data-c='-3'></td><td class='cell empty' data-r='2' data-c='-2'></td><td class='cell filled' data-r='2' data-c='-1'><div class='disc'><div class='name'>Aviar</div><div class='nums'>2/3/0/1</div></div></td><td class='cell empty' data-r='2' data-c='0'></td><td class='cell empty' data-r='2' data-c='1'></td><td class='cell empty' data-r='2' data-c='2'></td><td class='cell empty' data-r='2' data-c='3'></td><td class='cell empty' data-r='2' data-c='4'></td></tr><tr><th class='rowh'><span>1</span></th><td class='cell empty' data-r='1' data-c='-4'></td><td class='cell empty' data-r='1' data-c='-3'></td><td class='cell empty' data-r='1' data-c='-2'></td><td class='cell empty' data-r='1' data-c='-1'></td><td class='cell empty' data-r='1' data-c='0'></td><td class='cell empty' data-r='1' data-c='1'></td><td class='cell empty' data-r='1' data-c='2'></td><td class='cell empty' data-r='1' data-c='3'></td><td class='cell empty' data-r='1' data-c='4'></td></tr>
-      </tbody>
-    </table>
-    <div class="thrower">
-      <div class="pad"></div>
-      you · tee · speed rises away from you
+  <div class="top">
+    <div class="eyebrow">discwhich · 14×9 field</div>
+    <h1>Your bag on the fairway</h1>
+    <p class="sub">Phone layout. Tee at bottom. Farther = higher. Left = OS/fade (−). Right = flip/US (+). Same math every disc.</p>
+    <div class="chips">
+      <div class="chip">TB3 <b>8,-2</b></div>
+      <div class="chip">X3 <b>-3</b> · Aviar <b>-1</b></div>
+      <div class="chip"><a href="./">main</a></div>
     </div>
   </div>
 
-  <section class="card">
-    <h2>Is TB3 correct?</h2>
-    <p>
-      <strong>TB3 8/4/0/2</strong> →
-      row <strong class="mono">8</strong>,
-      col <strong class="mono">-2</strong>
-      (raw <span class="mono">-2</span>).
-    </p>
-    <p class="mute" style="margin-top:8px">
-      Speed 8 fairway row — correct class. Turn 0 / fade 2 is a mild OS workhorse, so it sits
-      one step left of center (−2), not on 0. That is what the formula says; if you want TeeBird-class
-      on 0, we change the formula (e.g. fade weight), not the TB3 coordinates by hand.
-    </p>
-  </section>
+  <div class="stage">
+    <div class="axis-x" aria-hidden="true">
+      <div class="end">OS</div>
+      <div class="mid">
+        <span>-4</span><span>-3</span><span>-2</span><span>-1</span><span class="z">0</span><span>+1</span><span>+2</span><span>+3</span><span>+4</span>
+      </div>
+      <div class="end r">US</div>
+    </div>
 
-  <section class="card">
-    <h2>Plug-in contract for discwhich</h2>
-    <ul>
-      <li><strong>Input:</strong> speed, glide, turn, fade (glide unused for cell id v1)</li>
-      <li><strong>Output:</strong> <span class="mono">{ row: 1..14, col: -4..+4 }</span></li>
-      <li><strong>No</strong> mold-name special cases in placement</li>
-      <li>Path drawing = separate algorithm; does not assign cells</li>
-      <li>Source: <span class="mono">build_bag_grid.py</span> → regenerate this page</li>
-    </ul>
-  </section>
+    <div class="field-wrap">
+      <div class="far-tag">farther</div>
+      <div class="field" id="field" aria-label="Bag field grid, 14 speeds by 9 stability columns">
+        <div class="gridlines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="spd-rail" aria-hidden="true"><div class='spd' style='grid-row:1'>14</div><div class='spd' style='grid-row:3'>12</div><div class='spd' style='grid-row:5'>10</div><div class='spd' style='grid-row:7'>8</div><div class='spd' style='grid-row:9'>6</div><div class='spd' style='grid-row:11'>4</div><div class='spd' style='grid-row:13'>2</div><div class='spd' style='grid-row:14'>1</div></div>
+        <button type='button' class='mark os' data-row='2' data-col='-1' style='grid-column:4;grid-row:13;--stack:0' aria-label='Aviar 2/3/0/1 row 2 col -1'><span class='dot'></span><span class='label'><span class='name'>Aviar</span><span class='nums'>2/3/0/1</span></span></button><button type='button' class='mark vos' data-row='3' data-col='-3' style='grid-column:2;grid-row:12;--stack:0' aria-label='Aviar X3 3/2/0/3 row 3 col -3'><span class='dot'></span><span class='label'><span class='name'>Aviar X3</span><span class='nums'>3/2/0/3</span></span></button><button type='button' class='mark os' data-row='5' data-col='-1' style='grid-column:4;grid-row:10;--stack:0' aria-label='Atlas 5/4/0/1 row 5 col -1'><span class='dot'></span><span class='label'><span class='name'>Atlas</span><span class='nums'>5/4/0/1</span></span></button><button type='button' class='mark str' data-row='5' data-col='0' style='grid-column:5;grid-row:10;--stack:0' aria-label='Mako3 5/5/0/0 row 5 col +0'><span class='dot'></span><span class='label'><span class='name'>Mako3</span><span class='nums'>5/5/0/0</span></span></button><button type='button' class='mark vos' data-row='7' data-col='-3' style='grid-column:2;grid-row:8;--stack:0' aria-label='Banshee 7/3/0/3 row 7 col -3'><span class='dot'></span><span class='label'><span class='name'>Banshee</span><span class='nums'>7/3/0/3</span></span></button><button type='button' class='mark os' data-row='8' data-col='-2' style='grid-column:3;grid-row:7;--stack:0' aria-label='TB3 8/4/0/2 row 8 col -2'><span class='dot'></span><span class='label'><span class='name'>TB3</span><span class='nums'>8/4/0/2</span></span></button><button type='button' class='mark vos' data-row='9' data-col='-4' style='grid-column:1;grid-row:6;--stack:0' aria-label='Firebird 9/3/0/4 row 9 col -4'><span class='dot'></span><span class='label'><span class='name'>Firebird</span><span class='nums'>9/3/0/4</span></span></button><button type='button' class='mark os' data-row='10' data-col='-1' style='grid-column:4;grid-row:5;--stack:0' aria-label='Orc 10/4/-1/3 row 10 col -1'><span class='dot'></span><span class='label'><span class='name'>Orc</span><span class='nums'>10/4/-1/3</span></span></button><button type='button' class='mark soft-us' data-row='11' data-col='2' style='grid-column:7;grid-row:4;--stack:0' aria-label='Archon 11/5/-2/2 row 11 col +2'><span class='dot'></span><span class='label'><span class='name'>Archon</span><span class='nums'>11/5/-2/2</span></span></button><button type='button' class='mark soft-us' data-row='11' data-col='2' style='grid-column:7;grid-row:4;--stack:1' aria-label='Mystere 11/6/-2/2 row 11 col +2'><span class='dot'></span><span class='label'><span class='name'>Mystere</span><span class='nums'>11/6/-2/2</span></span></button>
+        <div class="tee"><div class="pad"></div><div class="you">you · tee</div></div>
+      </div>
+    </div>
+  </div>
 
-  <section class="card">
-    <h2>Placement log (all discs)</h2>
+  <div class="sheet" id="sheet" aria-live="polite">
+    <div class="hint">Tap a disc</div>
+  </div>
+
+  <details class="log">
+    <summary>Placement log · formula</summary>
+    <p class="sub" style="margin:8px 0 0">
+      <span class="mono">row = clamp(round(speed),1,14)</span><br/>
+      <span class="mono">col = clamp(round((-turn)*2 - fade),-4,+4)</span>
+    </p>
     <table class="dbg">
-      <thead>
-        <tr>
-          <th>Disc</th><th>Numbers</th><th>Row</th><th>Col</th><th>Raw col</th><th>Carry</th><th>Note</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Archon</td><td class='mono'>11/5/-2/2</td><td class='mono'>11</td><td class='mono'>+2</td><td class='mono'>2</td><td>long</td><td class='mute'></td></tr><tr><td>Mystere</td><td class='mono'>11/6/-2/2</td><td class='mono'>11</td><td class='mono'>+2</td><td class='mono'>2</td><td>long</td><td class='mute'></td></tr><tr><td>Orc</td><td class='mono'>10/4/-1/3</td><td class='mono'>10</td><td class='mono'>-1</td><td class='mono'>-1</td><td>normal</td><td class='mute'></td></tr><tr><td>Firebird</td><td class='mono'>9/3/0/4</td><td class='mono'>9</td><td class='mono'>-4</td><td class='mono'>-4</td><td>normal</td><td class='mute'></td></tr><tr><td>TB3</td><td class='mono'>8/4/0/2</td><td class='mono'>8</td><td class='mono'>-2</td><td class='mono'>-2</td><td>normal</td><td class='mute'></td></tr><tr><td>Banshee</td><td class='mono'>7/3/0/3</td><td class='mono'>7</td><td class='mono'>-3</td><td class='mono'>-3</td><td>normal</td><td class='mute'></td></tr><tr><td>Atlas</td><td class='mono'>5/4/0/1</td><td class='mono'>5</td><td class='mono'>-1</td><td class='mono'>-1</td><td>normal</td><td class='mute'></td></tr><tr><td>Mako3</td><td class='mono'>5/5/0/0</td><td class='mono'>5</td><td class='mono'>+0</td><td class='mono'>0</td><td>long</td><td class='mute'></td></tr><tr><td>Aviar X3</td><td class='mono'>3/2/0/3</td><td class='mono'>3</td><td class='mono'>-3</td><td class='mono'>-3</td><td>short</td><td class='mute'></td></tr><tr><td>Aviar</td><td class='mono'>2/3/0/1</td><td class='mono'>2</td><td class='mono'>-1</td><td class='mono'>-1</td><td>normal</td><td class='mute'>putter proxy</td></tr>
-      </tbody>
+      <thead><tr><th>Disc</th><th>Numbers</th><th>Row</th><th>Col</th><th>Raw</th></tr></thead>
+      <tbody><tr><td>Archon</td><td class='mono'>11/5/-2/2</td><td class='mono'>11</td><td class='mono'>+2</td><td class='mono'>2</td></tr><tr><td>Mystere</td><td class='mono'>11/6/-2/2</td><td class='mono'>11</td><td class='mono'>+2</td><td class='mono'>2</td></tr><tr><td>Orc</td><td class='mono'>10/4/-1/3</td><td class='mono'>10</td><td class='mono'>-1</td><td class='mono'>-1</td></tr><tr><td>Firebird</td><td class='mono'>9/3/0/4</td><td class='mono'>9</td><td class='mono'>-4</td><td class='mono'>-4</td></tr><tr><td>TB3</td><td class='mono'>8/4/0/2</td><td class='mono'>8</td><td class='mono'>-2</td><td class='mono'>-2</td></tr><tr><td>Banshee</td><td class='mono'>7/3/0/3</td><td class='mono'>7</td><td class='mono'>-3</td><td class='mono'>-3</td></tr><tr><td>Atlas</td><td class='mono'>5/4/0/1</td><td class='mono'>5</td><td class='mono'>-1</td><td class='mono'>-1</td></tr><tr><td>Mako3</td><td class='mono'>5/5/0/0</td><td class='mono'>5</td><td class='mono'>+0</td><td class='mono'>0</td></tr><tr><td>Aviar X3</td><td class='mono'>3/2/0/3</td><td class='mono'>3</td><td class='mono'>-3</td><td class='mono'>-3</td></tr><tr><td>Aviar</td><td class='mono'>2/3/0/1</td><td class='mono'>2</td><td class='mono'>-1</td><td class='mono'>-1</td></tr></tbody>
     </table>
-  </section>
-</main>
+  </details>
 
-<footer>
-  Generated by build_bag_grid.py · discwhich · not hand-placed
-</footer>
+  <p class="foot">Generated by build_bag_grid.py · not hand-placed · discwhich</p>
+
+<script>
+const DISCS = [{"label": "Aviar", "mold": "Aviar P&A", "numbers": "2/3/0/1", "speed": 2, "glide": 3, "turn": 0, "fade": 1, "row": 2, "col": -1, "carry": "normal", "raw_col": -1, "stab": "os", "note": "putter proxy", "css_col": 4, "css_row": 13, "stack": 0}, {"label": "Aviar X3", "mold": "AviarX3", "numbers": "3/2/0/3", "speed": 3, "glide": 2, "turn": 0, "fade": 3, "row": 3, "col": -3, "carry": "short", "raw_col": -3, "stab": "vos", "note": "", "css_col": 2, "css_row": 12, "stack": 0}, {"label": "Atlas", "mold": "Atlas", "numbers": "5/4/0/1", "speed": 5, "glide": 4, "turn": 0, "fade": 1, "row": 5, "col": -1, "carry": "normal", "raw_col": -1, "stab": "os", "note": "", "css_col": 4, "css_row": 10, "stack": 0}, {"label": "Mako3", "mold": "Mako3", "numbers": "5/5/0/0", "speed": 5, "glide": 5, "turn": 0, "fade": 0, "row": 5, "col": 0, "carry": "long", "raw_col": 0, "stab": "str", "note": "", "css_col": 5, "css_row": 10, "stack": 0}, {"label": "Banshee", "mold": "Banshee", "numbers": "7/3/0/3", "speed": 7, "glide": 3, "turn": 0, "fade": 3, "row": 7, "col": -3, "carry": "normal", "raw_col": -3, "stab": "vos", "note": "", "css_col": 2, "css_row": 8, "stack": 0}, {"label": "TB3", "mold": "Teebird3", "numbers": "8/4/0/2", "speed": 8, "glide": 4, "turn": 0, "fade": 2, "row": 8, "col": -2, "carry": "normal", "raw_col": -2, "stab": "os", "note": "", "css_col": 3, "css_row": 7, "stack": 0}, {"label": "Firebird", "mold": "Firebird", "numbers": "9/3/0/4", "speed": 9, "glide": 3, "turn": 0, "fade": 4, "row": 9, "col": -4, "carry": "normal", "raw_col": -4, "stab": "vos", "note": "", "css_col": 1, "css_row": 6, "stack": 0}, {"label": "Orc", "mold": "Orc", "numbers": "10/4/-1/3", "speed": 10, "glide": 4, "turn": -1, "fade": 3, "row": 10, "col": -1, "carry": "normal", "raw_col": -1, "stab": "os", "note": "", "css_col": 4, "css_row": 5, "stack": 0}, {"label": "Archon", "mold": "Archon", "numbers": "11/5/-2/2", "speed": 11, "glide": 5, "turn": -2, "fade": 2, "row": 11, "col": 2, "carry": "long", "raw_col": 2, "stab": "soft-us", "note": "", "css_col": 7, "css_row": 4, "stack": 0}, {"label": "Mystere", "mold": "Mystere", "numbers": "11/6/-2/2", "speed": 11, "glide": 6, "turn": -2, "fade": 2, "row": 11, "col": 2, "carry": "long", "raw_col": 2, "stab": "soft-us", "note": "", "css_col": 7, "css_row": 4, "stack": 1}];
+const sheet = document.getElementById('sheet');
+const marks = [...document.querySelectorAll('.mark')];
+
+function show(p) {
+  marks.forEach(m => m.classList.toggle('is-active',
+    m.dataset.row === String(p.row) && m.dataset.col === String(p.col) && m.querySelector('.name')?.textContent === p.label
+  ));
+  sheet.innerHTML = `
+    <div class="title">${p.label}</div>
+    <div class="meta">
+      <span class="nums">${p.numbers}</span><br/>
+      cell <b>${p.row}, ${p.col >= 0 ? '+' : ''}${p.col}</b>
+      · speed row ${p.row}
+      · ${p.carry} carry
+      ${p.note ? ' · ' + p.note : ''}
+    </div>`;
+}
+
+marks.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const label = btn.querySelector('.name').textContent;
+    const p = DISCS.find(d => d.label === label);
+    if (p) show(p);
+  });
+});
+
+// default select nearest putter
+const aviar = DISCS.find(d => d.label === 'Aviar');
+if (aviar) show(aviar);
+</script>
 </body>
 </html>
